@@ -32,7 +32,7 @@ create: function () {
 // other code
 ```
 
-## 3. Create a group polygons to contain your polygons and add your polygons as sprites
+## 3. Create a group polygons to contain your polygons and add your polygons as sprites in the `create` method
 
 ```javascript
 // other code
