@@ -1,0 +1,397 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sat/0.6.0/SAT.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/2.6.2/phaser.min.js"></script>
+    <script src="../src/ArcadePolygons.js"></script>
+    <script src="../src/ArcadePolygons/Facade.js"></script>
+    <script src="../src/ArcadePolygons/Overrides.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div id="phaser"></div>
+
+      <div class="controls">
+        <label>
+          Speed: <span class="speed"></span>
+          <input type="range" class="control" data-feature="speed" value="1000" min="100" max="5000"/>
+        </label>
+        <label>
+          Gravity: <span class="gravity"></span>
+          <input type="range" class="control" data-feature="gravity" value="500" min="0" max="2000" step="50"/>
+        </label>
+        <label>
+          Bounce: <span class="bounce"></span>
+          <input type="range" class="control" data-feature="bounce" value="0" min="0" max="1" step="0.05"/>
+        </label>
+        <label>
+          Friction: <span class="friction"></span>
+          <input type="range" class="control" data-feature="friction" value="0" min="0" max="10" step="0.05"/>
+        </label>
+        <label>
+          Slow motion: <span class="slowMotion"></span>
+          <input type="range" class="control" data-feature="slowMotion" value="0" min="1" max="16"/>
+        </label>
+        <label>
+          Debug: <span class="debug"></span>
+          <input type="range" class="control" data-feature="debug" value="0" min="0" max="2"/>
+        </label>
+      </div>
+
+      <p>
+        <strong>WASD</strong> to move.
+      </p>
+    </div>
+
+    <script>
+      /**
+       * Instantiate a new PhaserSat Phaser state.
+       *
+       * @constructor
+       */
+      var PhaserSat = function () {
+        // We don't need anything in the constructor for this Phaser state.
+      };
+
+      PhaserSat.prototype = {
+
+        /**
+         * Some data populated by the update() method for use in the render()
+         * method.
+         *
+         * @type {object<array>}
+         */
+        debug: {
+          vectors: [],
+          normals: []
+        },
+
+        /**
+         * Some feature values we can use throughout our game state.
+         *
+         * @type {object}
+         */
+        features: {
+          debug: 0,
+          speed: 1000,
+          bounce: 0,
+          gravity: 500,
+          friction: 0,
+          slowMotion: 1
+        },
+
+        /**
+         * Prepare the game state.
+         *
+         * Here we create everything we want to mess around with in our update
+         * loop.
+         *
+         * @method PhaserSat#create
+         */
+        create: function () {
+          this.game.plugins.add(Phaser.Plugin.ArcadePolygons);
+
+          // Shortcuts for some SAT classes
+          var Box = SAT.Box;
+          var P = SAT.Polygon;
+          var V = SAT.Vector;
+
+          // Enabled Phaser's advance timing and set the slow motion value
+          this.time.advancedTiming = true;
+          this.time.slowMotion = this.features.slowMotion;
+
+          // Boot the arcade physics engine
+          this.physics.startSystem(Phaser.Physics.Arcade);
+
+          // Set a random, pale background colour
+          this.stage.backgroundColor = Phaser.Color.getRandomColor(210, 255);
+
+          // Create a graphics object to represent our player, in this case
+          // a rectangle
+          var playerGraphics = new Phaser.Graphics(this)
+            .beginFill(Phaser.Color.getRandomColor(50, 200))
+            .drawRect(0, 0, 48, 96)
+
+          var playerGraphicsTexture = playerGraphics.generateTexture();
+
+          // Add a new sprite to the game world, using the graphics above
+          this.player = this.add.sprite(60, 72, playerGraphicsTexture);
+
+          // Give it an Arcade physics body that we can use
+          this.physics.arcade.enable(this.player);
+
+          // Make sure the player can't leave the bounds of the game world
+          this.player.body.collideWorldBounds = true;
+
+          // Limit the player's maximum velocity
+          this.player.body.maxVelocity.x = this.features.speed;
+          this.player.body.maxVelocity.y = this.features.speed;
+
+          // Enable the polygon body physics
+          this.game.arcadePolygons.enable(
+            this.player,
+            new window.SAT.Box(
+              new window.SAT.Vector(this.player.body.x, this.player.body.y),
+              this.player.body.width,
+              this.player.body.height
+            ).toPolygon()
+          )
+
+          // Give our game state access to the desired control keys
+          this.controls = game.input.keyboard.addKeys({
+            'up': Phaser.KeyCode.W,
+            'down': Phaser.KeyCode.S,
+            'left': Phaser.KeyCode.A,
+            'right': Phaser.KeyCode.D,
+            'bounce': Phaser.KeyCode.B,
+            'gravity': Phaser.KeyCode.G,
+            'sliding': Phaser.KeyCode.C,
+            'friction': Phaser.KeyCode.F,
+          });
+
+          // Define a bunch of SAT polygons to render and collide against
+          this.polygons = this.game.add.group()
+
+          let polygonPoints = [
+            new Box(new V(0, 550), 800, 50).toPolygon(),
+
+            // A less ordinary triangle
+            new P(new V(400, 300), [
+              new V(46, 0), new V(0, 25), new V(64, 32)
+            ]),
+
+            // A bigger less ordinary triangle
+            new P(new V(240, 420), [
+              new V(0, 0), new V(40, 40), new V(-30, 60)
+            ]),
+
+            // Parallelogram
+            new P(new V(320, 400), [
+              new V(50,50), new V(100,50), new V(50,100), new V(0,100)
+            ]),
+
+            // A big hexagon!
+            new P(new V(500, 300), [
+              new V(50, 0), new V(150, 0), new V(200, 75), new V(150, 150),
+              new V(50, 150), new V(0, 75)
+            ]),
+
+            new P(new V(0, 0), [
+              new V(0, 116),
+              new V(90, 280),
+              new V(0, 370)
+            ]),
+
+            new P(new V(0, 0), [
+              new V(0, 146),
+              new V(0, 0),
+              new V(111, 0),
+              new V(452, 0),
+            ]),
+
+            new P(new V(0, 0), [
+              new V(0, 333),
+              new V(0, 600),
+              new V(136, 600),
+            ]),
+
+            new P(new V(0, 0), [
+              new V(402, 0),
+              new V(800, 0),
+              new V(800, 171),
+            ]),
+
+            new P(new V(0, 0), [
+              new V(800, 100),
+              new V(749, 423),
+              new V(800, 563),
+            ]),
+          ]
+
+          polygonPoints.forEach((satPolygon) => {
+            let sprite = this.game.add.sprite(0, 0)
+
+            this.physics.arcade.enable(sprite)
+
+            sprite.body.immovable = true
+            sprite.body.allowGravity = false
+
+            this.game.arcadePolygons.enable(sprite, satPolygon)
+
+            this.polygons.add(sprite)
+          })
+
+          // Render the polygons so that we can see them!
+          for (i in this.polygons.children) {
+            var polygon = this.polygons.children[i]
+
+            var graphics = this.game.add.graphics(polygon.body.sat.polygon.pos.x, polygon.body.sat.polygon.pos.y)
+            graphics.beginFill(Phaser.Color.getRandomColor(100, 200))
+            graphics.drawPolygon(polygon.body.sat.polygon.points)
+            graphics.endFill()
+          }
+
+          // Ew just no
+          this.game.debug.renderShadow = false
+        },
+
+        /**
+         * Update the game state.
+         *
+         * @method PhaserSat#update
+         */
+        update: function () {
+          var body = this.player.body;
+
+          // And the Arcade Physics gravity setting
+          var gravity = this.physics.arcade.gravity;
+
+          // And our keyboard controls
+          var controls = this.controls;
+
+          this.game.physics.arcade.collide(this.player, this.polygons)
+
+          if (this.game.input.activePointer.leftButton.isDown) {
+            const x = Math.round(this.game.input.activePointer.worldX)
+            const y = Math.round(this.game.input.activePointer.worldY)
+            console.log(`new V(${x}, ${y}),`)
+          }
+
+          /**
+           * Now that the physics is out of the way, we can apply velocity
+           * to our player by using acceleration.
+           */
+
+          // Let's apply some feature values
+          gravity.y = this.features.gravity;
+          body.bounce.setTo(this.features.bounce);
+          body.maxVelocity.x = this.features.speed;
+          body.maxVelocity.y = this.features.speed;
+          this.time.slowMotion = this.features.slowMotion;
+
+          // Reset the player body's acceleration
+          if (!(controls.left.isDown || controls.right.isDown)) {
+            body.acceleration.x = 0;
+          }
+
+          if (!(controls.up.isDown || controls.down.isDown)) {
+            body.acceleration.y = 0;
+          }
+
+          // Modify the player body's acceleration or velocity based on the
+          // currently pressed keys and speed value
+          if (controls.up.isDown) {
+            body.acceleration.y = -this.features.speed;
+          }
+
+          if (controls.down.isDown) {
+            body.acceleration.y = this.features.speed;
+          }
+
+          if (controls.left.isDown) {
+            body.acceleration.x = -this.features.speed;
+          }
+
+          if (controls.right.isDown) {
+            body.acceleration.x = this.features.speed;
+          }
+
+        },
+
+        render: function() {
+          // Render the current framerate
+          this.game.debug.text(this.time.fps || '--', 4, 16, '#777');
+
+          // Bail out here if debugging is disabled
+          if (this.features.debug < 1) {
+            return
+          }
+
+          // Render information about the player body
+          this.game.debug.bodyInfo(this.player, 32, 32, '#777');
+
+          // Prepare to render some text lines
+          this.game.debug.start(32, 400, '#777');
+          this.game.debug.columnWidth = 100;
+
+          // Initialise some variables to use in some loops because my new
+          // linter lints really hard
+          var i, item, name, line, colour;
+
+          // Render information about our vectors
+          for (i in this.debug.vectors) {
+            item = this.debug.vectors[i];
+            name = item.hasOwnProperty('name') ? item.name : 'Vector ' + i;
+
+            this.game.debug.line(name, ' x: ' + item.x.toFixed(4), ' y: ' + item.y.toFixed(4));
+          }
+
+          this.game.debug.stop();
+
+          // Render some of the vectors themselves from the center of the
+          // game world (technically the center of the screen relative to
+          // their game world coordinates but whatever)
+          if (this.features.debug > 1) {
+            for (i in this.debug.normals) {
+              item = this.debug.normals[i];
+
+              // Draw the vector (why did I call this normals? because
+              // vectors is already taken)
+              line = new Phaser.Line(
+                this.world.width / 2,
+                this.world.height / 2,
+                this.world.width / 2 + item.x,
+                this.world.height / 2 + item.y
+              );
+
+              // Select a colour from the vector or fall back to pink
+              colour = item.hasOwnProperty('colour') ? item.colour : 'rgba(255,128,255,0.8)';
+
+              this.game.debug.geom(line, colour);
+            }
+          }
+
+          // Clear the array for the next iteration
+          this.debug.vectors = [];
+          this.debug.normals = [];
+        }
+      }
+
+      var PhaserGlobal = {hideBanner: true};
+      var state = new PhaserSat;
+      var game = new Phaser.Game(1280, 800, Phaser.AUTO, 'phaser', state);
+
+      // This hooks up our ugly controls to the game state object.
+      // Thanks to http://youmightnotneedjquery.com for helping me to
+      // break an unhealthy dependency and keeping me sane here.
+      var $ = document.querySelectorAll.bind(document);
+
+      /**
+       * Update a feature value according to the value of the given
+       * <input type="range"> control.
+       *
+       * @param {Element} control
+       */
+      var updateValue = function (control) {
+        var feature = control.getAttribute('data-feature');
+        var value = parseFloat(control.value);
+
+        state.features[feature] = value;
+        $('.' + feature)[0].innerText = value;
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        // Update the game state's values with control values
+        Array.prototype.forEach.call($('.control'), function (control) {
+          // To begin with
+          updateValue(control);
+
+          // And when they change
+          control.addEventListener('input', function (event) {
+            updateValue(event.target)
+          })
+        })
+      })
+    </script>
+  </body>
+</html>
