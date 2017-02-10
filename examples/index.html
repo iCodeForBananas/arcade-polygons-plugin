@@ -118,7 +118,7 @@
           var playerGraphicsTexture = playerGraphics.generateTexture();
 
           // Add a new sprite to the game world, using the graphics above
-          this.player = this.add.sprite(60, 72, playerGraphicsTexture);
+          this.player = this.add.sprite(60, 72, playerGraphicsTexture)
 
           // Give it an Arcade physics body that we can use
           this.game.physics.arcade.enable(this.player)
@@ -317,7 +317,7 @@
             this.game.debug.line(name, ' x: ' + item.x.toFixed(4), ' y: ' + item.y.toFixed(4));
           }
 
-          this.game.debug.stoSAT.Polygon();
+          this.game.debug.stop()
 
           // Render some of the vectors themselves from the center of the
           // game world (technically the center of the screen relative to
