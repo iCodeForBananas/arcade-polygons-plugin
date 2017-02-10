@@ -17,23 +17,23 @@ Phaser.Plugin.ArcadePolygons.Facade = function () {}
  * @param {SAT} object - The object that describes the type of polygon to create.
  */
 Phaser.Plugin.ArcadePolygons.Facade.prototype.enable = function (object, satPolygon) {
-	if (Array.isArray(object)) {
-		for (var i = 0; i < object.length; i++) {
-			this.enable(object[i])
-		}
-	} else {
-		if (object instanceof Phaser.Group) {
-			this.enable(object.children)
-		} else {
-			if (object.hasOwnProperty('body')) {
-				this.enableBody(object.body, satPolygon)
-			}
+  if (Array.isArray(object)) {
+    for (var i = 0; i < object.length; i++) {
+      this.enable(object[i])
+    }
+  } else {
+    if (object instanceof Phaser.Group) {
+      this.enable(object.children)
+    } else {
+      if (object.hasOwnProperty('body')) {
+        this.enableBody(object.body, satPolygon)
+      }
 
-			if (object.hasOwnProperty('children') && object.children.length > 0) {
-				this.enable(object.children)
-			}
-		}
-	}
+      if (object.hasOwnProperty('children') && object.children.length > 0) {
+        this.enable(object.children)
+      }
+    }
+  }
 }
 
 /**

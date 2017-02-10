@@ -5,9 +5,9 @@
     "npm": "3.10.10"
   },
   "standard": {
-    "parser": "babel-eslint",
     "globals": [
-      "Phaser"
+      "Phaser",
+      "SAT"
     ]
   }
 }
