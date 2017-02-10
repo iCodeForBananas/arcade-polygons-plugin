@@ -1,0 +1,13 @@
+{
+  "private": false,
+  "engines": {
+    "node": "6.9.4",
+    "npm": "3.10.10"
+  },
+  "standard": {
+    "parser": "babel-eslint",
+    "globals": [
+      "Phaser"
+    ]
+  }
+}
