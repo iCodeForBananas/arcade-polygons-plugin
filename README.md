@@ -1,5 +1,9 @@
 # Arcade Polygons Plugin
 
+This plugin will allow you to add static polygons to your game that will collide with sprites and groups.
+
+![Example of Arcade Polygons Plugin](http://i.imgur.com/hAg4Elh.png)
+
 # Getting Started
 
 ### 1. Add plugin to your game and enable arcade physics in the `create` method
