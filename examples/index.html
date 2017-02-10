@@ -150,18 +150,55 @@
 
           let polygonPoints = [
             [
+              0, 750,
+              1280, 700,
+              1280, 800,
+              0, 800,
+            ],
+            [
               0, 116,
               90, 280,
               0, 370
             ],
-
             [
               0, 146,
               0, 0,
               111, 0,
               452, 0
+            ],
+            [
+              647, 385,
+              884, 458,
+              624, 589,
+              225, 541
+            ],
+            [
+              0, 319,
+              230, 753,
+              0, 770
+            ],
+            [
+              310, 0,
+              720, 103,
+              1170, 107,
+              1280, 0
+            ],
+            [
+              1162, 94,
+              1105, 357,
+              1272, 465
+            ],
+            [
+              1182, 396,
+              1094, 596,
+              1145, 747
+            ],
+            [
+              853, 189,
+              986, 311,
+              789, 316,
+              709, 218
             ]
-
           ]
 
           polygonPoints.forEach(vertices => {
@@ -179,7 +216,6 @@
           // Render the polygons so that we can see them!
           for (i in this.polygons.children) {
             var polygon = this.polygons.children[i]
-
             var graphics = this.game.add.graphics(polygon.body.sat.polygon.pos.x, polygon.body.sat.polygon.pos.y)
             graphics.beginFill(Phaser.Color.getRandomColor(100, 200))
             graphics.drawPolygon(polygon.body.sat.polygon.points)
@@ -209,7 +245,7 @@
           if (this.game.input.activePointer.leftButton.isDown) {
             const x = Math.round(this.game.input.activePointer.worldX)
             const y = Math.round(this.game.input.activePointer.worldY)
-            console.log(`new SAT.Vector(${x}, ${y}),`)
+            console.log(`${x}, ${y},`)
           }
 
           /**
