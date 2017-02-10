@@ -1,19 +1,19 @@
 # Arcade Polygons Plugin
 
-## 1. Add plugin to your game and enable arcade physics in the `create` method
+### 1. Add plugin to your game and enable arcade physics in the `create` method
 
 ```javascript
 // other code
 create: function () {
   this.game.plugins.add(Phaser.Plugin.ArcadePolygons)
   this.physics.startSystem(Phaser.Physics.Arcade)
-  
+
   // Create sprites and polygons below
 },
 // other code
 ```
 
-## 2. Enable arcade physics on your sprite and then enable polygon physics on it in the `create` method
+### 2. Enable arcade physics on your sprite and then enable polygon physics on it in the `create` method
 
 ```javascript
 // other code
@@ -32,7 +32,7 @@ create: function () {
 // other code
 ```
 
-## 3. Create a group polygons to contain your polygons and add your polygons as sprites in the `create` method
+### 3. Create a group polygons to contain your polygons and add your polygons as sprites in the `create` method
 
 ```javascript
 // other code
@@ -53,27 +53,14 @@ create: function () {
   // The group your previous sprite will collide against
   this.polygons = this.game.add.group()
 
-  // Potential future api to avoid the below loop
-  //this.game.physics.arcade.enable(sprite)
-  //this.game.arcadePolygons.enable(this.polygons, polygonPoints)
-
   // Create a polygon from each polygon point defined above
-  polygonPoints.forEach(vertices => {
-    let sprite = this.game.add.sprite(0, 0)
-
-    this.game.physics.arcade.enable(sprite)
-    this.game.arcadePolygons.enable(sprite, vertices)
-
-    sprite.body.immovable = true
-    sprite.body.allowGravity = false
-
-    this.polygons.add(sprite)
-  })
+  this.game.physics.arcade.enable(sprite)
+  this.game.arcadePolygons.enableGroup(this.polygons, polygonPoints)
 },
 // other code
 ```
 
-## 4. Check for collisions in the `update` method
+### 4. Check for collisions in the `update` method
 
 ```javascript
 // other code
