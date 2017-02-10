@@ -1,6 +1,6 @@
 <html>
   <head>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="./styles.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sat/0.6.0/SAT.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/2.6.2/phaser.min.js"></script>
     <script src="../src/ArcadePolygons.js"></script>
@@ -9,6 +9,14 @@
   </head>
   <body>
     <div class="container">
+      <h1>Phaser Arcade Polygons Plugin</h1>
+
+      <h2>Demo</h2>
+
+      <p>A demonstration of the <a target="_blank" href="https://github.com/michaeljcalkins/arcade-polygons-plugin">Arcade Polygons</a> plugin for <a target="_blank" href="http://phaser.io">Phaser</a>.</p>
+
+      <p>Hold <strong>C</strong> for a list of keyboard controls. Use the sliders below to alter the values used in the game state.</p>
+
       <div id="phaser"></div>
 
       <div class="controls">
@@ -211,12 +219,11 @@
           polygonPoints.forEach((satPolygon) => {
             let sprite = this.game.add.sprite(0, 0)
 
-            this.physics.arcade.enable(sprite)
+            this.game.physics.arcade.enable(sprite)
+            this.game.arcadePolygons.enable(sprite, satPolygon)
 
             sprite.body.immovable = true
             sprite.body.allowGravity = false
-
-            this.game.arcadePolygons.enable(sprite, satPolygon)
 
             this.polygons.add(sprite)
           })
@@ -241,13 +248,13 @@
          * @method PhaserSat#update
          */
         update: function () {
-          var body = this.player.body;
+          var body = this.player.body
 
           // And the Arcade Physics gravity setting
-          var gravity = this.physics.arcade.gravity;
+          var gravity = this.physics.arcade.gravity
 
           // And our keyboard controls
-          var controls = this.controls;
+          var controls = this.controls
 
           this.game.physics.arcade.collide(this.player, this.polygons)
 
