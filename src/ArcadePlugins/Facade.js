@@ -1,5 +1,3 @@
-
-
 /**
  * A facade class to attach to a Phaser game.
  *
@@ -85,3 +83,19 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enableBody = function (body) {
   // }
 
 };
+
+/**
+ * Collides a physics body against a tile.
+ *
+ * @method Phaser.Plugin.ArcadeSlopes.Facade#collide
+ * @param  {integer}                    i            - The tile index.
+ * @param  {Phaser.Physics.Arcade.Body} body         - The physics body.
+ * @param  {Phaser.Tile}                tile         - The tile.
+ * @param  {Phaser.TilemapLayer}        tilemapLayer - The tilemap layer.
+ * @param  {boolean}                    overlapOnly  - Whether to only check for an overlap.
+ * @return {boolean}                                 - Whether the body was separated.
+ */
+Phaser.Plugin.ArcadePolygons.Facade.prototype.collide = function (sprite, polygons) {
+  
+};
+
