@@ -99,11 +99,6 @@
         create: function () {
           this.game.plugins.add(Phaser.Plugin.ArcadePolygons);
 
-          // Shortcuts for some SAT classes
-          var Box = SAT.Box;
-          var P = SAT.Polygon;
-          var V = SAT.Vector;
-
           // Enabled Phaser's advance timing and set the slow motion value
           this.time.advancedTiming = true;
           this.time.slowMotion = this.features.slowMotion;
@@ -126,7 +121,10 @@
           this.player = this.add.sprite(60, 72, playerGraphicsTexture);
 
           // Give it an Arcade physics body that we can use
-          this.physics.arcade.enable(this.player);
+          this.game.physics.arcade.enable(this.player)
+
+          // Enable arcade polygon collisions with sprite body
+          this.game.arcadePolygons.enableSpriteBody(this.player)
 
           // Make sure the player can't leave the bounds of the game world
           this.player.body.collideWorldBounds = true;
@@ -134,16 +132,6 @@
           // Limit the player's maximum velocity
           this.player.body.maxVelocity.x = this.features.speed;
           this.player.body.maxVelocity.y = this.features.speed;
-
-          // Enable the polygon body physics
-          this.game.arcadePolygons.enable(
-            this.player,
-            new window.SAT.Box(
-              new window.SAT.Vector(this.player.body.x, this.player.body.y),
-              this.player.body.width,
-              this.player.body.height
-            ).toPolygon()
-          )
 
           // Give our game state access to the desired control keys
           this.controls = game.input.keyboard.addKeys({
@@ -161,66 +149,26 @@
           this.polygons = this.game.add.group()
 
           let polygonPoints = [
-            new Box(new V(0, 550), 800, 50).toPolygon(),
+            [
+              0, 116,
+              90, 280,
+              0, 370
+            ],
 
-            // A less ordinary triangle
-            new P(new V(400, 300), [
-              new V(46, 0), new V(0, 25), new V(64, 32)
-            ]),
+            [
+              0, 146,
+              0, 0,
+              111, 0,
+              452, 0
+            ]
 
-            // A bigger less ordinary triangle
-            new P(new V(240, 420), [
-              new V(0, 0), new V(40, 40), new V(-30, 60)
-            ]),
-
-            // Parallelogram
-            new P(new V(320, 400), [
-              new V(50,50), new V(100,50), new V(50,100), new V(0,100)
-            ]),
-
-            // A big hexagon!
-            new P(new V(500, 300), [
-              new V(50, 0), new V(150, 0), new V(200, 75), new V(150, 150),
-              new V(50, 150), new V(0, 75)
-            ]),
-
-            new P(new V(0, 0), [
-              new V(0, 116),
-              new V(90, 280),
-              new V(0, 370)
-            ]),
-
-            new P(new V(0, 0), [
-              new V(0, 146),
-              new V(0, 0),
-              new V(111, 0),
-              new V(452, 0),
-            ]),
-
-            new P(new V(0, 0), [
-              new V(0, 333),
-              new V(0, 600),
-              new V(136, 600),
-            ]),
-
-            new P(new V(0, 0), [
-              new V(402, 0),
-              new V(800, 0),
-              new V(800, 171),
-            ]),
-
-            new P(new V(0, 0), [
-              new V(800, 100),
-              new V(749, 423),
-              new V(800, 563),
-            ]),
           ]
 
-          polygonPoints.forEach((satPolygon) => {
+          polygonPoints.forEach(vertices => {
             let sprite = this.game.add.sprite(0, 0)
 
             this.game.physics.arcade.enable(sprite)
-            this.game.arcadePolygons.enable(sprite, satPolygon)
+            this.game.arcadePolygons.enable(sprite, vertices)
 
             sprite.body.immovable = true
             sprite.body.allowGravity = false
@@ -261,7 +209,7 @@
           if (this.game.input.activePointer.leftButton.isDown) {
             const x = Math.round(this.game.input.activePointer.worldX)
             const y = Math.round(this.game.input.activePointer.worldY)
-            console.log(`new V(${x}, ${y}),`)
+            console.log(`new SAT.Vector(${x}, ${y}),`)
           }
 
           /**
@@ -333,7 +281,7 @@
             this.game.debug.line(name, ' x: ' + item.x.toFixed(4), ' y: ' + item.y.toFixed(4));
           }
 
-          this.game.debug.stop();
+          this.game.debug.stoSAT.Polygon();
 
           // Render some of the vectors themselves from the center of the
           // game world (technically the center of the screen relative to

@@ -10,7 +10,7 @@ Phaser.Plugin.ArcadePolygons.Overrides = {}
 /**
  * Collide a sprite against all polygons.
  *
- * This is used to override Phaser.Physics.Arcade.collideSpriteVsGroup().
+ * This is used to override Phaser.Physics.Arcade.collideSpriteVsGroup.Polygon().
  *
  * @override Phaser.Physics.Arcade#collideSpriteVsGroup
  * @method Phaser.Plugin.ArcadePolygons.Overrides#collideSpriteVsGroup
@@ -90,7 +90,7 @@ Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup = function (sprite, 
       /**
        * And now, let's experiment with - goodness me - velocity!
        */
-      var velocity = new SAT.V(body.velocity.x, body.velocity.y)
+      var velocity = new SAT.Vector(body.velocity.x, body.velocity.y)
 
       // We need to flip our overlap normal, SAT gives it to us
       // facing inwards to the collision and we need it facing out
