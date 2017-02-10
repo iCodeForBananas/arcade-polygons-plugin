@@ -1,19 +1,20 @@
 /**
  * A facade class to attach to a Phaser game.
  *
- * @class Phaser.Plugin.ArcadeSlopes.Facade
+ * @class Phaser.Plugin.ArcadePolygons.Facade
  * @constructor
- * @param {Phaser.Plugin.ArcadeSlopes.TileSlopeFactory} factory       - A tile slope factory.
+ * @param {Phaser.Plugin.ArcadePolygons.TileSlopeFactory} factory       - A tile slope factory.
  * @param {object}                                      solvers       - A set of collision solvers.
  * @param {integer}                                     defaultSolver - The default collision solver type to use for sloped tiles.
  */
 Phaser.Plugin.ArcadePolygons.Facade = function () {}
 
 /**
- * Enable the physics body of the given object for sloped tile interaction.
+ * Enable the physics body of the given object for SAT polygon interaction.
  *
- * @method Phaser.Plugin.ArcadeSlopes.Facade#enable
+ * @method Phaser.Plugin.ArcadePolygons.Facade#enable
  * @param {Phaser.Sprite|Phaser.Group} object - The object to enable sloped tile physics for.
+ * @param {SAT} object - The object that describes the type of polygon to create.
  */
 Phaser.Plugin.ArcadePolygons.Facade.prototype.enable = function (object, satPolygon) {
 	if (Array.isArray(object)) {
@@ -38,14 +39,10 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enable = function (object, satPoly
 /**
  * Enable the given physics body for sloped tile interaction.
  *
- * TODO: Circle body support, when it's released.
- *
- * @method Phaser.Plugin.ArcadeSlopes.Facade#enableBody
+ * @method Phaser.Plugin.ArcadePolygons.Facade#enableBody
  * @param {Phaser.Physics.Arcade.Body} body - The physics body to enable.
  */
 Phaser.Plugin.ArcadePolygons.Facade.prototype.enableBody = function (body, satPolygon) {
-  // Conveniently add it to the player body and convert it to a
-  // polygon while we're at it
   body.sat = {
     polygon: satPolygon
   }

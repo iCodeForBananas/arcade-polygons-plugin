@@ -3,19 +3,19 @@
  * neighbour checks.
  *
  * @static
- * @class Phaser.Plugin.ArcadeSlopes.Override
+ * @class Phaser.Plugin.ArcadePolygons.Override
  */
 Phaser.Plugin.ArcadePolygons.Overrides = {}
 
 /**
- * Collide a sprite against a tile map layer.
+ * Collide a sprite against all polygons.
  *
- * This is used to override Phaser.Physics.Arcade.collideSpriteVsTilemapLayer().
+ * This is used to override Phaser.Physics.Arcade.collideSpriteVsGroup().
  *
- * @override Phaser.Physics.Arcade#collideSpriteVsTilemapLayer
- * @method Phaser.Plugin.ArcadeSlopes.Overrides#collideSpriteVsTilemapLayer
+ * @override Phaser.Physics.Arcade#collideSpriteVsGroup
+ * @method Phaser.Plugin.ArcadePolygons.Overrides#collideSpriteVsGroup
  * @param  {Phaser.Sprite}       sprite           - The sprite to check.
- * @param  {Phaser.TilemapLayer} tilemapLayer     - The tilemap layer to check.
+ * @param  {Phaser.Group}        group            - The group to check.
  * @param  {function}            collideCallback  - An optional collision callback.
  * @param  {function}            processCallback  - An optional overlap processing callback.
  * @param  {object}              callbackContext  - The context in which to run the callbacks.
