@@ -18,18 +18,18 @@ Phaser.Plugin.ArcadePolygons.Facade = function () {}
 Phaser.Plugin.ArcadePolygons.Facade.prototype.enable = function (object, satPolygon) {
 	if (Array.isArray(object)) {
 		for (var i = 0; i < object.length; i++) {
-			this.enable(object[i]);
+			this.enable(object[i])
 		}
 	} else {
 		if (object instanceof Phaser.Group) {
-			this.enable(object.children);
+			this.enable(object.children)
 		} else {
 			if (object.hasOwnProperty('body')) {
-				this.enableBody(object.body, sat);
+				this.enableBody(object.body, satPolygon)
 			}
 
 			if (object.hasOwnProperty('children') && object.children.length > 0) {
-				this.enable(object.children);
+				this.enable(object.children)
 			}
 		}
 	}
@@ -44,11 +44,9 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enable = function (object, satPoly
  * @param {Phaser.Physics.Arcade.Body} body - The physics body to enable.
  */
 Phaser.Plugin.ArcadePolygons.Facade.prototype.enableBody = function (body, satPolygon) {
-
   // Conveniently add it to the player body and convert it to a
   // polygon while we're at it
   body.sat = {
     polygon: satPolygon
   }
-
 }
