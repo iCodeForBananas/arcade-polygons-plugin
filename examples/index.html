@@ -133,19 +133,7 @@
           this.player.body.maxVelocity.x = this.features.speed;
           this.player.body.maxVelocity.y = this.features.speed;
 
-          // Give our game state access to the desired control keys
-          this.controls = game.input.keyboard.addKeys({
-            'up': Phaser.KeyCode.W,
-            'down': Phaser.KeyCode.S,
-            'left': Phaser.KeyCode.A,
-            'right': Phaser.KeyCode.D,
-            'bounce': Phaser.KeyCode.B,
-            'gravity': Phaser.KeyCode.G,
-            'sliding': Phaser.KeyCode.C,
-            'friction': Phaser.KeyCode.F,
-          });
-
-          // Define a bunch of SAT polygons to render and collide against
+          // Define a bunch of polygon vertice coordinates to render and collide against.
           this.polygons = this.game.add.group()
 
           let polygonPoints = [
@@ -221,6 +209,18 @@
             graphics.drawPolygon(polygon.body.sat.polygon.points)
             graphics.endFill()
           }
+
+          // Give our game state access to the desired control keys
+          this.controls = game.input.keyboard.addKeys({
+            'up': Phaser.KeyCode.W,
+            'down': Phaser.KeyCode.S,
+            'left': Phaser.KeyCode.A,
+            'right': Phaser.KeyCode.D,
+            'bounce': Phaser.KeyCode.B,
+            'gravity': Phaser.KeyCode.G,
+            'sliding': Phaser.KeyCode.C,
+            'friction': Phaser.KeyCode.F,
+          })
 
           // Ew just no
           this.game.debug.renderShadow = false
