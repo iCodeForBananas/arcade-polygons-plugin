@@ -80,3 +80,25 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enableSpriteBody = function (sprit
     polygon: satPolygon
   }
 }
+
+/**
+ * Create polygons from an array of points and add them to the defined group.
+ *
+ * @method Phaser.Plugin.ArcadePolygons.Facade#enableGroup
+ * @param {Phaser.Physics.Arcade.Group} group - The group to create polygons for.
+ * @param {array} polygonPoints - The physics body to enable.
+ * @param {object} scope - The game reference to add sprites too.
+ */
+Phaser.Plugin.ArcadePolygons.Facade.prototype.enableGroup = function (group, polygonPoints, scope) {
+  polygonPoints.forEach(vertices => {
+    let sprite = scope.game.add.sprite(0, 0)
+
+    scope.game.physics.arcade.enable(sprite)
+    scope.game.arcadePolygons.enable(sprite, vertices)
+
+    sprite.body.immovable = true
+    sprite.body.allowGravity = false
+
+    group.add(sprite)
+  })
+}

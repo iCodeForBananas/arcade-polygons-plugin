@@ -189,17 +189,9 @@
             ]
           ]
 
-          polygonPoints.forEach(vertices => {
-            let sprite = this.game.add.sprite(0, 0)
-
-            this.game.physics.arcade.enable(sprite)
-            this.game.arcadePolygons.enable(sprite, vertices)
-
-            sprite.body.immovable = true
-            sprite.body.allowGravity = false
-
-            this.polygons.add(sprite)
-          })
+          // Potential future api to avoid the below loop
+          this.game.physics.arcade.enable(this.polygons)
+          this.game.arcadePolygons.enableGroup(this.polygons, polygonPoints, this)
 
           // Render the polygons so that we can see them!
           for (i in this.polygons.children) {
@@ -240,8 +232,10 @@
           // And our keyboard controls
           var controls = this.controls
 
+          // Collide our sprite against the group of polygons
           this.game.physics.arcade.collide(this.player, this.polygons)
 
+          // Show the coordinates of each click, helpful for getting the points for polygons
           if (this.game.input.activePointer.leftButton.isDown) {
             const x = Math.round(this.game.input.activePointer.worldX)
             const y = Math.round(this.game.input.activePointer.worldY)
@@ -349,13 +343,13 @@
       }
 
       var PhaserGlobal = {hideBanner: true};
-      var state = new PhaserSat;
+      var state = new PhaserSat
       var game = new Phaser.Game(1280, 800, Phaser.AUTO, 'phaser', state);
 
       // This hooks up our ugly controls to the game state object.
       // Thanks to http://youmightnotneedjquery.com for helping me to
       // break an unhealthy dependency and keeping me sane here.
-      var $ = document.querySelectorAll.bind(document);
+      var $ = document.querySelectorAll.bind(document)
 
       /**
        * Update a feature value according to the value of the given
