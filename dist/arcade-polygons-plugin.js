@@ -1152,7 +1152,17 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enableSpriteBody = function (sprit
  * @param {object} scope - The game reference to add sprites too.
  */
 Phaser.Plugin.ArcadePolygons.Facade.prototype.enableGroup = function (group, polygonPoints, scope) {
-  polygonPoints.forEach(function (vertices) {
+  var processedPolygonPoints = []
+  polygonPoints.forEach(function (polygon) {
+    var decomposedPolygonGroup = decomp.quickDecomp(polygon)
+    decomposedPolygonGroup.forEach(function (decomposedPolygon) {
+      // Flatten an array of arrays of points
+      // [[1,2],[3,4],[5,6]] -> [1,2,3,4,5,6]
+      processedPolygonPoints.push(flatten(decomposedPolygon))
+    })
+  })
+
+  processedPolygonPoints.forEach(function (vertices) {
     var sprite = scope.game.add.sprite(0, 0)
 
     scope.game.physics.arcade.enable(sprite)
@@ -1163,6 +1173,10 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enableGroup = function (group, pol
 
     group.add(sprite)
   })
+}
+
+function flatten (array) {
+  return [].concat.apply([], array)
 }
 
 /**
