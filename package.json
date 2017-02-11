@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "A Phaser plugin that enables polygons in arcade physics.",
   "main": "dist/phaser-arcade-slopes.js",
-  "scripts": {},
+  "scripts": {
+    "start": "gulp watch",
+    "build": "gulp build"
+  },
   "repository": {
     "type": "git",
     "url": "git@github.com:michaeljcalkins/arcade-polygons-plugin.git"
