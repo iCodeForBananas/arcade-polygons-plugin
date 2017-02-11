@@ -43,12 +43,12 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enable = function (object, vertice
  * @param {Phaser.Physics.Arcade.Body} body - The physics body to enable.
  */
 Phaser.Plugin.ArcadePolygons.Facade.prototype.enableBody = function (body, vertices) {
-  let polygonVectors = []
-  for (let i = 0; i < vertices.length; i += 2) {
+  var polygonVectors = []
+  for (var i = 0; i < vertices.length; i += 2) {
     polygonVectors.push(new SAT.Vector(vertices[i], vertices[i + 1]))
   }
 
-  let satPolygon = new SAT.Polygon(
+  var satPolygon = new SAT.Polygon(
     new SAT.Vector(0, 0),
     polygonVectors
   )
@@ -69,8 +69,8 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enableSpriteBody = function (sprit
     console.error('Enable arcade physics before enabling polygon physics.')
   }
 
-  let body = sprite.body
-  let satPolygon = new SAT.Box(
+  var body = sprite.body
+  var satPolygon = new SAT.Box(
     new SAT.Vector(body.x, body.y),
     body.width,
     body.height
@@ -90,8 +90,8 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enableSpriteBody = function (sprit
  * @param {object} scope - The game reference to add sprites too.
  */
 Phaser.Plugin.ArcadePolygons.Facade.prototype.enableGroup = function (group, polygonPoints, scope) {
-  polygonPoints.forEach(vertices => {
-    let sprite = scope.game.add.sprite(0, 0)
+  polygonPoints.forEach(function (vertices) {
+    var sprite = scope.game.add.sprite(0, 0)
 
     scope.game.physics.arcade.enable(sprite)
     scope.game.arcadePolygons.enable(sprite, vertices)

@@ -46,7 +46,7 @@ create: function () {
   // previous code
 
   // Define a bunch of polygon vertice coordinates to render and collide against
-  let polygonPoints = [
+  var polygonPoints = [
     [
       0, 750,
       1280, 700,

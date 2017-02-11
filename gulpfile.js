@@ -3,7 +3,6 @@ const util = require('gulp-util')
 const concat = require('gulp-concat')
 const rename = require('gulp-rename')
 const uglify = require('gulp-uglify')
-const babel = require('gulp-babel')
 
 // Build by default
 gulp.task('default', ['build'])
@@ -12,9 +11,6 @@ gulp.task('default', ['build'])
 gulp.task('build', function () {
   gulp.src(['node_modules/sat/SAT.js', 'src/**/*.js'])
     .pipe(concat('arcade-polygons-plugin.js'))
-    .pipe(babel({
-      presets: ['es2015']
-    }))
     .pipe(gulp.dest('dist'))
     .pipe(rename({suffix: '.min'}))
     .pipe(uglify())

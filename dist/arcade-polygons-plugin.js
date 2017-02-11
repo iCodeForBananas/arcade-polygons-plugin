@@ -1,7 +1,3 @@
-'use strict';
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
 // Version 0.6.0 - Copyright 2012 - 2016 -  Jim Riecken <jimr@jimr.ca>
 //
 // Released under the MIT License - https://github.com/jriecken/sat-js
@@ -29,15 +25,14 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
  */
 (function (root, factory) {
   "use strict";
-
   if (typeof define === 'function' && define['amd']) {
     define(factory);
-  } else if ((typeof exports === 'undefined' ? 'undefined' : _typeof(exports)) === 'object') {
+  } else if (typeof exports === 'object') {
     module['exports'] = factory();
   } else {
     root['SAT'] = factory();
   }
-})(undefined, function () {
+}(this, function () {
   "use strict";
 
   var SAT = {};
@@ -63,12 +58,13 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
   // Alias `Vector` as `V`
   SAT['V'] = Vector;
 
+
   // Copy the values of another Vector into this one.
   /**
    * @param {Vector} other The other Vector.
    * @return {Vector} This for chaining.
    */
-  Vector.prototype['copy'] = Vector.prototype.copy = function (other) {
+  Vector.prototype['copy'] = Vector.prototype.copy = function(other) {
     this['x'] = other['x'];
     this['y'] = other['y'];
     return this;
@@ -78,7 +74,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
   /**
    * @return {Vector} The new cloned vector
    */
-  Vector.prototype['clone'] = Vector.prototype.clone = function () {
+  Vector.prototype['clone'] = Vector.prototype.clone = function() {
     return new Vector(this['x'], this['y']);
   };
 
@@ -87,7 +83,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
   /**
    * @return {Vector} This for chaining.
    */
-  Vector.prototype['perp'] = Vector.prototype.perp = function () {
+  Vector.prototype['perp'] = Vector.prototype.perp = function() {
     var x = this['x'];
     this['x'] = this['y'];
     this['y'] = -x;
@@ -111,47 +107,48 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
   /**
    * @return {Vector} This for chaining.
    */
-  Vector.prototype['reverse'] = Vector.prototype.reverse = function () {
+  Vector.prototype['reverse'] = Vector.prototype.reverse = function() {
     this['x'] = -this['x'];
     this['y'] = -this['y'];
     return this;
   };
+  
 
   // Normalize this vector.  (make it have length of `1`)
   /**
    * @return {Vector} This for chaining.
    */
-  Vector.prototype['normalize'] = Vector.prototype.normalize = function () {
+  Vector.prototype['normalize'] = Vector.prototype.normalize = function() {
     var d = this.len();
-    if (d > 0) {
+    if(d > 0) {
       this['x'] = this['x'] / d;
       this['y'] = this['y'] / d;
     }
     return this;
   };
-
+  
   // Add another vector to this one.
   /**
    * @param {Vector} other The other Vector.
    * @return {Vector} This for chaining.
    */
-  Vector.prototype['add'] = Vector.prototype.add = function (other) {
+  Vector.prototype['add'] = Vector.prototype.add = function(other) {
     this['x'] += other['x'];
     this['y'] += other['y'];
     return this;
   };
-
+  
   // Subtract another vector from this one.
   /**
    * @param {Vector} other The other Vector.
    * @return {Vector} This for chaiing.
    */
-  Vector.prototype['sub'] = Vector.prototype.sub = function (other) {
+  Vector.prototype['sub'] = Vector.prototype.sub = function(other) {
     this['x'] -= other['x'];
     this['y'] -= other['y'];
     return this;
   };
-
+  
   // Scale this vector. An independant scaling factor can be provided
   // for each axis, or a single scaling factor that will scale both `x` and `y`.
   /**
@@ -160,43 +157,43 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
    *   is not specified, the x scaling factor will be used.
    * @return {Vector} This for chaining.
    */
-  Vector.prototype['scale'] = Vector.prototype.scale = function (x, y) {
+  Vector.prototype['scale'] = Vector.prototype.scale = function(x,y) {
     this['x'] *= x;
     this['y'] *= y || x;
-    return this;
+    return this; 
   };
-
+  
   // Project this vector on to another vector.
   /**
    * @param {Vector} other The vector to project onto.
    * @return {Vector} This for chaining.
    */
-  Vector.prototype['project'] = Vector.prototype.project = function (other) {
+  Vector.prototype['project'] = Vector.prototype.project = function(other) {
     var amt = this.dot(other) / other.len2();
     this['x'] = amt * other['x'];
     this['y'] = amt * other['y'];
     return this;
   };
-
+  
   // Project this vector onto a vector of unit length. This is slightly more efficient
   // than `project` when dealing with unit vectors.
   /**
    * @param {Vector} other The unit vector to project onto.
    * @return {Vector} This for chaining.
    */
-  Vector.prototype['projectN'] = Vector.prototype.projectN = function (other) {
+  Vector.prototype['projectN'] = Vector.prototype.projectN = function(other) {
     var amt = this.dot(other);
     this['x'] = amt * other['x'];
     this['y'] = amt * other['y'];
     return this;
   };
-
+  
   // Reflect this vector on an arbitrary axis.
   /**
    * @param {Vector} axis The vector representing the axis.
    * @return {Vector} This for chaining.
    */
-  Vector.prototype['reflect'] = Vector.prototype.reflect = function (axis) {
+  Vector.prototype['reflect'] = Vector.prototype.reflect = function(axis) {
     var x = this['x'];
     var y = this['y'];
     this.project(axis).scale(2);
@@ -204,14 +201,14 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     this['y'] -= y;
     return this;
   };
-
+  
   // Reflect this vector on an arbitrary axis (represented by a unit vector). This is
   // slightly more efficient than `reflect` when dealing with an axis that is a unit vector.
   /**
    * @param {Vector} axis The unit vector representing the axis.
    * @return {Vector} This for chaining.
    */
-  Vector.prototype['reflectN'] = Vector.prototype.reflectN = function (axis) {
+  Vector.prototype['reflectN'] = Vector.prototype.reflectN = function(axis) {
     var x = this['x'];
     var y = this['y'];
     this.projectN(axis).scale(2);
@@ -219,32 +216,32 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     this['y'] -= y;
     return this;
   };
-
+  
   // Get the dot product of this vector and another.
   /**
    * @param {Vector}  other The vector to dot this one against.
    * @return {number} The dot product.
    */
-  Vector.prototype['dot'] = Vector.prototype.dot = function (other) {
+  Vector.prototype['dot'] = Vector.prototype.dot = function(other) {
     return this['x'] * other['x'] + this['y'] * other['y'];
   };
-
+  
   // Get the squared length of this vector.
   /**
    * @return {number} The length^2 of this vector.
    */
-  Vector.prototype['len2'] = Vector.prototype.len2 = function () {
+  Vector.prototype['len2'] = Vector.prototype.len2 = function() {
     return this.dot(this);
   };
-
+  
   // Get the length of this vector.
   /**
    * @return {number} The length of this vector.
    */
-  Vector.prototype['len'] = Vector.prototype.len = function () {
+  Vector.prototype['len'] = Vector.prototype.len = function() {
     return Math.sqrt(this.len2());
   };
-
+  
   // ## Circle
   //
   // Represents a circle with a position and a radius.
@@ -262,17 +259,17 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     this['r'] = r || 0;
   }
   SAT['Circle'] = Circle;
-
+  
   // Compute the axis-aligned bounding box (AABB) of this Circle.
   //
   // Note: Returns a _new_ `Polygon` each time you call this.
   /**
    * @return {Polygon} The AABB
    */
-  Circle.prototype['getAABB'] = Circle.prototype.getAABB = function () {
+  Circle.prototype['getAABB'] = Circle.prototype.getAABB = function() {
     var r = this['r'];
     var corner = this["pos"].clone().sub(new Vector(r, r));
-    return new Box(corner, r * 2, r * 2).toPolygon();
+    return new Box(corner, r*2, r*2).toPolygon();
   };
 
   // ## Polygon
@@ -301,7 +298,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     this.setPoints(points || []);
   }
   SAT['Polygon'] = Polygon;
-
+  
   // Set the points of the polygon.
   //
   // Note: The points are counter-clockwise *with respect to the coordinate system*.
@@ -313,7 +310,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
    *   in counter-clockwise order.
    * @return {Polygon} This for chaining.
    */
-  Polygon.prototype['setPoints'] = Polygon.prototype.setPoints = function (points) {
+  Polygon.prototype['setPoints'] = Polygon.prototype.setPoints = function(points) {
     // Only re-allocate if this is a new polygon or the number of points has changed.
     var lengthChanged = !this['points'] || this['points'].length !== points.length;
     if (lengthChanged) {
@@ -338,7 +335,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
    * @param {number} angle The current rotation angle (in radians).
    * @return {Polygon} This for chaining.
    */
-  Polygon.prototype['setAngle'] = Polygon.prototype.setAngle = function (angle) {
+  Polygon.prototype['setAngle'] = Polygon.prototype.setAngle = function(angle) {
     this['angle'] = angle;
     this._recalc();
     return this;
@@ -349,7 +346,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
    * @param {Vector} offset The new offset vector.
    * @return {Polygon} This for chaining.
    */
-  Polygon.prototype['setOffset'] = Polygon.prototype.setOffset = function (offset) {
+  Polygon.prototype['setOffset'] = Polygon.prototype.setOffset = function(offset) {
     this['offset'] = offset;
     this._recalc();
     return this;
@@ -362,7 +359,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
    * @param {number} angle The angle to rotate (in radians)
    * @return {Polygon} This for chaining.
    */
-  Polygon.prototype['rotate'] = Polygon.prototype.rotate = function (angle) {
+  Polygon.prototype['rotate'] = Polygon.prototype.rotate = function(angle) {
     var points = this['points'];
     var len = points.length;
     for (var i = 0; i < len; i++) {
@@ -395,12 +392,13 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     return this;
   };
 
+
   // Computes the calculated collision polygon. Applies the `angle` and `offset` to the original points then recalculates the
   // edges and normals of the collision polygon.
   /**
    * @return {Polygon} This for chaining.
    */
-  Polygon.prototype._recalc = function () {
+  Polygon.prototype._recalc = function() {
     // Calculated points - this is what is used for underlying collisions and takes into account
     // the angle/offset set on the polygon.
     var calcPoints = this['calcPoints'];
@@ -435,7 +433,8 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     }
     return this;
   };
-
+  
+  
   // Compute the axis-aligned bounding box. Any current state
   // (translations/rotations) will be applied before constructing the AABB.
   //
@@ -443,7 +442,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
   /**
    * @return {Polygon} The AABB
    */
-  Polygon.prototype["getAABB"] = Polygon.prototype.getAABB = function () {
+  Polygon.prototype["getAABB"] = Polygon.prototype.getAABB = function() {
     var points = this["calcPoints"];
     var len = points.length;
     var xMin = points[0]["x"];
@@ -454,17 +453,20 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
       var point = points[i];
       if (point["x"] < xMin) {
         xMin = point["x"];
-      } else if (point["x"] > xMax) {
+      }
+      else if (point["x"] > xMax) {
         xMax = point["x"];
       }
       if (point["y"] < yMin) {
         yMin = point["y"];
-      } else if (point["y"] > yMax) {
+      }
+      else if (point["y"] > yMax) {
         yMax = point["y"];
       }
     }
     return new Box(this["pos"].clone().add(new Vector(xMin, yMin)), xMax - xMin, yMax - yMin).toPolygon();
   };
+  
 
   // ## Box
   //
@@ -491,13 +493,16 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
   /**
    * @return {Polygon} A new Polygon that represents this box.
    */
-  Box.prototype['toPolygon'] = Box.prototype.toPolygon = function () {
+  Box.prototype['toPolygon'] = Box.prototype.toPolygon = function() {
     var pos = this['pos'];
     var w = this['w'];
     var h = this['h'];
-    return new Polygon(new Vector(pos['x'], pos['y']), [new Vector(), new Vector(w, 0), new Vector(w, h), new Vector(0, h)]);
+    return new Polygon(new Vector(pos['x'], pos['y']), [
+     new Vector(), new Vector(w, 0), 
+     new Vector(w,h), new Vector(0,h)
+    ]);
   };
-
+  
   // ## Response
   //
   // An object representing the result of an intersection. Contains:
@@ -508,7 +513,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
   //  - Whether the first object is entirely inside the second, and vice versa.
   /**
    * @constructor
-   */
+   */  
   function Response() {
     this['a'] = null;
     this['b'] = null;
@@ -524,7 +529,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
   /**
    * @return {Response} This for chaining
    */
-  Response.prototype['clear'] = Response.prototype.clear = function () {
+  Response.prototype['clear'] = Response.prototype.clear = function() {
     this['aInB'] = true;
     this['bInA'] = true;
     this['overlap'] = Number.MAX_VALUE;
@@ -539,19 +544,15 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
    * @type {Array.<Vector>}
    */
   var T_VECTORS = [];
-  for (var i = 0; i < 10; i++) {
-    T_VECTORS.push(new Vector());
-  }
-
+  for (var i = 0; i < 10; i++) { T_VECTORS.push(new Vector()); }
+  
   // A pool of arrays of numbers used in calculations to avoid allocating
   // memory.
   /**
    * @type {Array.<Array.<number>>}
    */
   var T_ARRAYS = [];
-  for (var i = 0; i < 5; i++) {
-    T_ARRAYS.push([]);
-  }
+  for (var i = 0; i < 5; i++) { T_ARRAYS.push([]); }
 
   // Temporary response used for polygon hit detection.
   /**
@@ -581,19 +582,15 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     var min = Number.MAX_VALUE;
     var max = -Number.MAX_VALUE;
     var len = points.length;
-    for (var i = 0; i < len; i++) {
+    for (var i = 0; i < len; i++ ) {
       // The magnitude of the projection of the point onto the normal
       var dot = points[i].dot(normal);
-      if (dot < min) {
-        min = dot;
-      }
-      if (dot > max) {
-        max = dot;
-      }
+      if (dot < min) { min = dot; }
+      if (dot > max) { max = dot; }
     }
-    result[0] = min;result[1] = max;
+    result[0] = min; result[1] = max;
   }
-
+  
   // Check whether two convex polygons are separated by the specified
   // axis (must be a unit vector).
   /**
@@ -623,8 +620,8 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     rangeB[1] += projectedOffset;
     // Check if there is a gap. If there is, this is a separating axis and we can stop
     if (rangeA[0] > rangeB[1] || rangeB[0] > rangeA[1]) {
-      T_VECTORS.push(offsetV);
-      T_ARRAYS.push(rangeA);
+      T_VECTORS.push(offsetV); 
+      T_ARRAYS.push(rangeA); 
       T_ARRAYS.push(rangeB);
       return true;
     }
@@ -635,23 +632,23 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
       if (rangeA[0] < rangeB[0]) {
         response['aInB'] = false;
         // A ends before B does. We have to pull A out of B
-        if (rangeA[1] < rangeB[1]) {
+        if (rangeA[1] < rangeB[1]) { 
           overlap = rangeA[1] - rangeB[0];
           response['bInA'] = false;
-          // B is fully inside A.  Pick the shortest way out.
+        // B is fully inside A.  Pick the shortest way out.
         } else {
           var option1 = rangeA[1] - rangeB[0];
           var option2 = rangeB[1] - rangeA[0];
           overlap = option1 < option2 ? option1 : -option2;
         }
-        // B starts further left than A
+      // B starts further left than A
       } else {
         response['bInA'] = false;
         // B ends before A ends. We have to push A out of B
-        if (rangeA[1] > rangeB[1]) {
+        if (rangeA[1] > rangeB[1]) { 
           overlap = rangeA[0] - rangeB[1];
           response['aInB'] = false;
-          // A is fully inside B.  Pick the shortest way out.
+        // A is fully inside B.  Pick the shortest way out.
         } else {
           var option1 = rangeA[1] - rangeB[0];
           var option2 = rangeB[1] - rangeA[0];
@@ -666,15 +663,15 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         if (overlap < 0) {
           response['overlapN'].reverse();
         }
-      }
+      }      
     }
-    T_VECTORS.push(offsetV);
-    T_ARRAYS.push(rangeA);
+    T_VECTORS.push(offsetV); 
+    T_ARRAYS.push(rangeA); 
     T_ARRAYS.push(rangeB);
     return false;
   }
   SAT['isSeparatingAxis'] = isSeparatingAxis;
-
+  
   // Calculates which Voronoi region a point is on a line segment.
   // It is assumed that both the line and the point are relative to `(0,0)`
   //
@@ -693,18 +690,12 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     var dp = point.dot(line);
     // If the point is beyond the start of the line, it is in the
     // left voronoi region.
-    if (dp < 0) {
-      return LEFT_VORONOI_REGION;
-    }
+    if (dp < 0) { return LEFT_VORONOI_REGION; }
     // If the point is beyond the end of the line, it is in the
     // right voronoi region.
-    else if (dp > len2) {
-        return RIGHT_VORONOI_REGION;
-      }
-      // Otherwise, it's in the middle one.
-      else {
-          return MIDDLE_VORONOI_REGION;
-        }
+    else if (dp > len2) { return RIGHT_VORONOI_REGION; }
+    // Otherwise, it's in the middle one.
+    else { return MIDDLE_VORONOI_REGION; }
   }
   // Constants for Voronoi regions
   /**
@@ -719,7 +710,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
    * @const
    */
   var RIGHT_VORONOI_REGION = 1;
-
+  
   // ## Collision Tests
 
   // Check if a point is inside a circle.
@@ -776,21 +767,21 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
       return false;
     }
     // They intersect.  If we're calculating a response, calculate the overlap.
-    if (response) {
+    if (response) { 
       var dist = Math.sqrt(distanceSq);
       response['a'] = a;
       response['b'] = b;
       response['overlap'] = totalRadius - dist;
       response['overlapN'].copy(differenceV.normalize());
       response['overlapV'].copy(differenceV).scale(response['overlap']);
-      response['aInB'] = a['r'] <= b['r'] && dist <= b['r'] - a['r'];
+      response['aInB']= a['r'] <= b['r'] && dist <= b['r'] - a['r'];
       response['bInA'] = b['r'] <= a['r'] && dist <= a['r'] - b['r'];
     }
     T_VECTORS.push(differenceV);
     return true;
   }
   SAT['testCircleCircle'] = testCircleCircle;
-
+  
   // Check if a polygon and a circle collide.
   /**
    * @param {Polygon} polygon The polygon.
@@ -808,26 +799,26 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     var len = points.length;
     var edge = T_VECTORS.pop();
     var point = T_VECTORS.pop();
-
+    
     // For each edge in the polygon:
     for (var i = 0; i < len; i++) {
       var next = i === len - 1 ? 0 : i + 1;
       var prev = i === 0 ? len - 1 : i - 1;
       var overlap = 0;
       var overlapN = null;
-
+      
       // Get the edge.
       edge.copy(polygon['edges'][i]);
       // Calculate the center of the circle relative to the starting point of the edge.
       point.copy(circlePos).sub(points[i]);
-
+      
       // If the distance between the center of the circle and the point
       // is bigger than the radius, the polygon is definitely not fully in
       // the circle.
       if (response && point.len2() > radius2) {
         response['aInB'] = false;
       }
-
+      
       // Calculate which Voronoi region the center of the circle is in.
       var region = voronoiRegion(edge, point);
       // If it's the left region:
@@ -842,9 +833,9 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
           var dist = point.len();
           if (dist > radius) {
             // No intersection
-            T_VECTORS.push(circlePos);
+            T_VECTORS.push(circlePos); 
             T_VECTORS.push(edge);
-            T_VECTORS.push(point);
+            T_VECTORS.push(point); 
             T_VECTORS.push(point2);
             return false;
           } else if (response) {
@@ -855,7 +846,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
           }
         }
         T_VECTORS.push(point2);
-        // If it's the right region:
+      // If it's the right region:
       } else if (region === RIGHT_VORONOI_REGION) {
         // We need to make sure we're in the left region on the next edge
         edge.copy(polygon['edges'][next]);
@@ -867,10 +858,10 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
           var dist = point.len();
           if (dist > radius) {
             // No intersection
-            T_VECTORS.push(circlePos);
-            T_VECTORS.push(edge);
+            T_VECTORS.push(circlePos); 
+            T_VECTORS.push(edge); 
             T_VECTORS.push(point);
-            return false;
+            return false;              
           } else if (response) {
             // It intersects, calculate the overlap.
             response['bInA'] = false;
@@ -878,7 +869,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
             overlap = radius - dist;
           }
         }
-        // Otherwise, it's the middle region:
+      // Otherwise, it's the middle region:
       } else {
         // Need to check if the circle is intersecting the edge,
         // Change the edge into its "edge normal".
@@ -890,8 +881,8 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         // If the circle is on the outside of the edge, there is no intersection.
         if (dist > 0 && distAbs > radius) {
           // No intersection
-          T_VECTORS.push(circlePos);
-          T_VECTORS.push(normal);
+          T_VECTORS.push(circlePos); 
+          T_VECTORS.push(normal); 
           T_VECTORS.push(point);
           return false;
         } else if (response) {
@@ -905,7 +896,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
           }
         }
       }
-
+      
       // If this is the smallest overlap we've seen, keep it. 
       // (overlapN may be null if the circle was in the wrong Voronoi region).
       if (overlapN && response && Math.abs(overlap) < Math.abs(response['overlap'])) {
@@ -913,20 +904,20 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         response['overlapN'].copy(overlapN);
       }
     }
-
+    
     // Calculate the final overlap vector - based on the smallest overlap.
     if (response) {
       response['a'] = polygon;
       response['b'] = circle;
       response['overlapV'].copy(response['overlapN']).scale(response['overlap']);
     }
-    T_VECTORS.push(circlePos);
-    T_VECTORS.push(edge);
+    T_VECTORS.push(circlePos); 
+    T_VECTORS.push(edge); 
     T_VECTORS.push(point);
     return true;
   }
   SAT['testPolygonCircle'] = testPolygonCircle;
-
+  
   // Check if a circle and a polygon collide.
   //
   // **NOTE:** This is slightly less efficient than polygonCircle as it just
@@ -955,7 +946,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     return result;
   }
   SAT['testCirclePolygon'] = testCirclePolygon;
-
+  
   // Checks whether polygons collide.
   /**
    * @param {Polygon} a The first polygon.
@@ -976,7 +967,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
       }
     }
     // If any of the edge normals of B is a separating axis, no intersection.
-    for (var i = 0; i < bLen; i++) {
+    for (var i = 0;i < bLen; i++) {
       if (isSeparatingAxis(a['pos'], b['pos'], aPoints, bPoints, b['normals'][i], response)) {
         return false;
       }
@@ -994,7 +985,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
   SAT['testPolygonPolygon'] = testPolygonPolygon;
 
   return SAT;
-});
+}));
 
 /**
  * @author Chris Andrew <chris@hexus.io>
@@ -1015,18 +1006,18 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
  * @param {integer}     defaultSolver - The default collision solver type to use for sloped tiles.
  */
 Phaser.Plugin.ArcadePolygons = function (game, parent) {
-  Phaser.Plugin.call(this, game, parent);
+  Phaser.Plugin.call(this, game, parent)
 
   /**
    * The Arcade Polygons facade.
    *
    * @property {Phaser.Plugin.ArcadePolygons.Facade} facade
    */
-  this.facade = new Phaser.Plugin.ArcadePolygons.Facade();
-};
+  this.facade = new Phaser.Plugin.ArcadePolygons.Facade()
+}
 
-Phaser.Plugin.ArcadePolygons.prototype = Object.create(Phaser.Plugin.prototype);
-Phaser.Plugin.ArcadePolygons.prototype.constructor = Phaser.Plugin.ArcadePolygons;
+Phaser.Plugin.ArcadePolygons.prototype = Object.create(Phaser.Plugin.prototype)
+Phaser.Plugin.ArcadePolygons.prototype.constructor = Phaser.Plugin.ArcadePolygons
 
 /**
  * The Arcade Polygons plugin version number.
@@ -1034,7 +1025,7 @@ Phaser.Plugin.ArcadePolygons.prototype.constructor = Phaser.Plugin.ArcadePolygon
  * @constant
  * @type {string}
  */
-Phaser.Plugin.ArcadePolygons.VERSION = '1';
+Phaser.Plugin.ArcadePolygons.VERSION = '1'
 
 /**
  * Initializes the plugin.
@@ -1043,15 +1034,15 @@ Phaser.Plugin.ArcadePolygons.VERSION = '1';
  */
 Phaser.Plugin.ArcadePolygons.prototype.init = function () {
   // Give the game an Arcade Polygons facade
-  this.game.arcadePolygons = this.game.arcadePolygons || this.facade;
+  this.game.arcadePolygons = this.game.arcadePolygons || this.facade
 
   // Keep a reference to the original Arcade.collideSpriteVsTilemapLayer method
-  this.originalCollideSpriteVsGroup = Phaser.Physics.Arcade.prototype.collideSpriteVsGroup;
+  this.originalCollideSpriteVsGroup = Phaser.Physics.Arcade.prototype.collideSpriteVsGroup
 
   // Replace the original method with the Arcade Polygons override, along with
   // some extra methods that break down the functionality a little more
-  Phaser.Physics.Arcade.prototype.collideSpriteVsGroup = Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup;
-};
+  Phaser.Physics.Arcade.prototype.collideSpriteVsGroup = Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup
+}
 
 /**
  * Destroys the plugin and nulls its references. Restores any overriden methods.
@@ -1060,14 +1051,14 @@ Phaser.Plugin.ArcadePolygons.prototype.init = function () {
  */
 Phaser.Plugin.ArcadePolygons.prototype.destroy = function () {
   // Null the game's reference to the facade
-  this.game.arcadePolygons = null;
+  this.game.arcadePolygons = null
 
   // Restore the original collideSpriteVsTilemapLayer method and null the rest
-  Phaser.Physics.Arcade.prototype.collideSpriteVsGroup = this.originalCollideSpriteVsGroup;
+  Phaser.Physics.Arcade.prototype.collideSpriteVsGroup = this.originalCollideSpriteVsGroup
 
   // Call the parent destroy method
-  Phaser.Plugin.prototype.destroy.call(this);
-};
+  Phaser.Plugin.prototype.destroy.call(this)
+}
 
 /**
  * A facade class to attach to a Phaser game.
@@ -1078,7 +1069,7 @@ Phaser.Plugin.ArcadePolygons.prototype.destroy = function () {
  * @param {object}                                      solvers       - A set of collision solvers.
  * @param {integer}                                     defaultSolver - The default collision solver type to use for sloped tiles.
  */
-Phaser.Plugin.ArcadePolygons.Facade = function () {};
+Phaser.Plugin.ArcadePolygons.Facade = function () {}
 
 /**
  * Enable the physics body of the given object for SAT polygon interaction.
@@ -1090,22 +1081,22 @@ Phaser.Plugin.ArcadePolygons.Facade = function () {};
 Phaser.Plugin.ArcadePolygons.Facade.prototype.enable = function (object, vertices) {
   if (Array.isArray(object)) {
     for (var i = 0; i < object.length; i++) {
-      this.enable(object[i]);
+      this.enable(object[i])
     }
   } else {
     if (object instanceof Phaser.Group) {
-      this.enable(object.children);
+      this.enable(object.children)
     } else {
       if (object.hasOwnProperty('body')) {
-        this.enableBody(object.body, vertices);
+        this.enableBody(object.body, vertices)
       }
 
       if (object.hasOwnProperty('children') && object.children.length > 0) {
-        this.enable(object.children);
+        this.enable(object.children)
       }
     }
   }
-};
+}
 
 /**
  * Enable the given physics body for polygon interaction.
@@ -1114,17 +1105,20 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enable = function (object, vertice
  * @param {Phaser.Physics.Arcade.Body} body - The physics body to enable.
  */
 Phaser.Plugin.ArcadePolygons.Facade.prototype.enableBody = function (body, vertices) {
-  var polygonVectors = [];
+  var polygonVectors = []
   for (var i = 0; i < vertices.length; i += 2) {
-    polygonVectors.push(new SAT.Vector(vertices[i], vertices[i + 1]));
+    polygonVectors.push(new SAT.Vector(vertices[i], vertices[i + 1]))
   }
 
-  var satPolygon = new SAT.Polygon(new SAT.Vector(0, 0), polygonVectors);
+  var satPolygon = new SAT.Polygon(
+    new SAT.Vector(0, 0),
+    polygonVectors
+  )
 
   body.sat = {
     polygon: satPolygon
-  };
-};
+  }
+}
 
 /**
  * Enable the given sprite body with a box polygon.
@@ -1134,16 +1128,20 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enableBody = function (body, verti
  */
 Phaser.Plugin.ArcadePolygons.Facade.prototype.enableSpriteBody = function (sprite) {
   if (!sprite.hasOwnProperty('body')) {
-    console.error('Enable arcade physics before enabling polygon physics.');
+    console.error('Enable arcade physics before enabling polygon physics.')
   }
 
-  var body = sprite.body;
-  var satPolygon = new SAT.Box(new SAT.Vector(body.x, body.y), body.width, body.height).toPolygon();
+  var body = sprite.body
+  var satPolygon = new SAT.Box(
+    new SAT.Vector(body.x, body.y),
+    body.width,
+    body.height
+  ).toPolygon()
 
   body.sat = {
     polygon: satPolygon
-  };
-};
+  }
+}
 
 /**
  * Create polygons from an array of points and add them to the defined group.
@@ -1155,17 +1153,17 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enableSpriteBody = function (sprit
  */
 Phaser.Plugin.ArcadePolygons.Facade.prototype.enableGroup = function (group, polygonPoints, scope) {
   polygonPoints.forEach(function (vertices) {
-    var sprite = scope.game.add.sprite(0, 0);
+    var sprite = scope.game.add.sprite(0, 0)
 
-    scope.game.physics.arcade.enable(sprite);
-    scope.game.arcadePolygons.enable(sprite, vertices);
+    scope.game.physics.arcade.enable(sprite)
+    scope.game.arcadePolygons.enable(sprite, vertices)
 
-    sprite.body.immovable = true;
-    sprite.body.allowGravity = false;
+    sprite.body.immovable = true
+    sprite.body.allowGravity = false
 
-    group.add(sprite);
-  });
-};
+    group.add(sprite)
+  })
+}
 
 /**
  * A static class with override methods for Phaser's tilemap collisions and tile
@@ -1174,7 +1172,7 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enableGroup = function (group, pol
  * @static
  * @class Phaser.Plugin.ArcadePolygons.Override
  */
-Phaser.Plugin.ArcadePolygons.Overrides = {};
+Phaser.Plugin.ArcadePolygons.Overrides = {}
 
 /**
  * Collide a sprite against all polygons.
@@ -1193,11 +1191,11 @@ Phaser.Plugin.ArcadePolygons.Overrides = {};
  */
 Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup = function (sprite, group, collideCallback, processCallback, callbackContext, overlapOnly) {
   if (!sprite.body) {
-    return false;
+    return false
   }
 
   if (!sprite.body.sat) {
-    console.error('Non polygon object!');
+    console.error('Non polygon object!')
   }
 
   /**
@@ -1209,7 +1207,7 @@ Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup = function (sprite, 
   this.debug = {
     vectors: [],
     normals: []
-  };
+  }
 
   /**
    * Some feature values we can use throughout our game state.
@@ -1223,97 +1221,107 @@ Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup = function (sprite, 
     gravity: 500,
     friction: 0,
     slowMotion: 1
-  };
+  }
 
-  var body = sprite.body;
+  var body = sprite.body
 
   // Update the player box position
-  body.sat.polygon.pos.x = body.x; // SAT allows us to set polygon
-  body.sat.polygon.pos.y = body.y; // position properties directly
+  body.sat.polygon.pos.x = body.x // SAT allows us to set polygon
+  body.sat.polygon.pos.y = body.y // position properties directly
 
   // Lazily loop over all the polygons. In reality you'd use a quad
   // tree or some broad phase of collision detection so that you
   // don't have to test against everything, but we don't need
   // to get into optimisation here as this is just a test.
   for (var i in group.children) {
-    var polygon = group.children[i];
+    var polygon = group.children[i]
 
-    var response = new SAT.Response();
-    var collision = SAT.testPolygonPolygon(body.sat.polygon, polygon.body.sat.polygon, response);
+    var response = new SAT.Response()
+    var collision = SAT.testPolygonPolygon(body.sat.polygon, polygon.body.sat.polygon, response)
 
     // Our collision test responded positive, so let's resolve it
     if (collision) {
       // Here's our overlap vector - let's invert it so it faces
       // out of the collision surface
-      var overlapV = response.overlapV.clone().scale(-1);
+      var overlapV = response.overlapV.clone().scale(-1)
 
       // Then add it to the player's position to resolve the
       // collision!
-      body.position.x += overlapV.x;
-      body.position.y += overlapV.y;
+      body.position.x += overlapV.x
+      body.position.y += overlapV.y
 
       // Let's update the SAT polygon too for any further polygons
-      body.sat.polygon.pos.x = body.position.x;
-      body.sat.polygon.pos.y = body.position.y;
+      body.sat.polygon.pos.x = body.position.x
+      body.sat.polygon.pos.y = body.position.y
 
       /**
        * And now, let's experiment with - goodness me - velocity!
        */
-      var velocity = new SAT.Vector(body.velocity.x, body.velocity.y);
+      var velocity = new SAT.Vector(body.velocity.x, body.velocity.y)
 
       // We need to flip our overlap normal, SAT gives it to us
       // facing inwards to the collision and we need it facing out
-      var overlapN = response.overlapN.clone().scale(-1);
+      var overlapN = response.overlapN.clone().scale(-1)
 
       // Project our velocity onto the overlap normal
-      var velocityN = velocity.clone().projectN(overlapN);
+      var velocityN = velocity.clone().projectN(overlapN)
 
       // Then work out the surface velocity
-      var velocityT = velocity.clone().sub(velocityN);
+      var velocityT = velocity.clone().sub(velocityN)
 
       // Scale our normal velocity with a bounce coefficient
       // Ziggity, biggity, hi! https://youtu.be/Yc8bzl6dqQI
-      var bounce = velocityN.clone().scale(-this.features.bounce);
+      var bounce = velocityN.clone().scale(-this.features.bounce)
 
       // And scale a friction coefficient to the surface velocity
-      var friction = velocityT.clone().scale(1 - this.features.friction);
+      var friction = velocityT.clone().scale(1 - this.features.friction)
 
       // And finally add them together for our new velocity!
-      var newVelocity = friction.clone().add(bounce);
+      var newVelocity = friction.clone().add(bounce)
 
       // Set the new velocity on our physics body
-      body.velocity.x = newVelocity.x;
-      body.velocity.y = newVelocity.y;
+      body.velocity.x = newVelocity.x
+      body.velocity.y = newVelocity.y
 
       // If debugging is enabled, let's store some of our vectors.
       // This is why we've declared so many variables above.
       // Otherwise, we wouldn't need to.
       if (this.features.debug) {
-        velocity.name = 'velocity';
-        overlapV.name = 'overlapV';
-        overlapN.name = 'overlapN';
-        velocityN.name = 'velocityN';
-        velocityT.name = 'velocityT';
-        bounce.name = 'bounce';
-        friction.name = 'friction';
-        newVelocity.name = 'newVelocity';
+        velocity.name = 'velocity'
+        overlapV.name = 'overlapV'
+        overlapN.name = 'overlapN'
+        velocityN.name = 'velocityN'
+        velocityT.name = 'velocityT'
+        bounce.name = 'bounce'
+        friction.name = 'friction'
+        newVelocity.name = 'newVelocity'
 
-        this.debug.vectors.push(velocity, overlapN, velocityN, velocityT, bounce, friction, newVelocity);
+        this.debug.vectors.push(
+          velocity,
+          overlapN,
+          velocityN,
+          velocityT,
+          bounce,
+          friction,
+          newVelocity
+        )
 
         // If detailed debugging is enabled, let's print the
         // vectors as lines on the screen!
         if (this.features.debug > 1) {
-          overlapN.colour = '#333';
-          bounce.colour = '#25f';
-          friction.colour = '#f55';
-          newVelocity.colour = '#5f5';
+          overlapN.colour = '#333'
+          bounce.colour = '#25f'
+          friction.colour = '#f55'
+          newVelocity.colour = '#5f5'
 
           //
-          overlapN.scale(50);
+          overlapN.scale(50)
 
-          this.debug.normals.push(overlapN, bounce, friction, newVelocity);
+          this.debug.normals.push(
+            overlapN, bounce, friction, newVelocity
+          )
         }
       }
     }
   }
-};
+}

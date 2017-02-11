@@ -3,9 +3,7 @@
     <link rel="stylesheet" href="./styles.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sat/0.6.0/SAT.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/2.6.2/phaser.min.js"></script>
-    <script src="../src/ArcadePolygons.js"></script>
-    <script src="../src/ArcadePolygons/Facade.js"></script>
-    <script src="../src/ArcadePolygons/Overrides.js"></script>
+    <script src="../dist/arcade-polygons-plugin.js"></script>
   </head>
   <body>
     <div class="container">
@@ -136,7 +134,7 @@
           // Define a bunch of polygon vertice coordinates to render and collide against.
           this.polygons = this.game.add.group()
 
-          let polygonPoints = [
+          var polygonPoints = [
             [
               0, 750,
               1280, 700,
