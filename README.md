@@ -60,7 +60,6 @@ create: function () {
   this.polygons = this.game.add.group()
 
   // Create a polygon from each polygon point defined above
-  this.game.physics.arcade.enable(sprite)
   this.game.arcadePolygons.enableGroup(this.polygons, polygonPoints)
 },
 // other code
