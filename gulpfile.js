@@ -10,7 +10,7 @@ gulp.task('default', ['build'])
 
 // The build task
 gulp.task('build', function () {
-  gulp.src(['src/**/*.js', 'node_modules/sat/SAT.js'])
+  gulp.src(['node_modules/sat/SAT.js', 'src/**/*.js'])
     .pipe(concat('arcade-polygons-plugin.js'))
     .pipe(babel({
       presets: ['es2015']

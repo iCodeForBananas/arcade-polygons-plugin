@@ -2,328 +2,6 @@
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-/**
- * @author Chris Andrew <chris@hexus.io>
- * @author Michael J. Calkins <michaeljamescalkins@gmail.com>
- * @copyright 2017 Michael J. Calkins
- * @license MIT
- */
-
-/**
- * Arcade Polygons provides sloped tile functionality for tilemaps that use
- * Phaser's Arcade physics engine.
- *
- * @class Phaser.Plugin.ArcadePolygons
- * @constructor
- * @extends Phaser.Plugin
- * @param {Phaser.Game} game          - A reference to the game using this plugin.
- * @param {any}         parent        - The object that owns this plugin, usually a Phaser.PluginManager.
- * @param {integer}     defaultSolver - The default collision solver type to use for sloped tiles.
- */
-Phaser.Plugin.ArcadePolygons = function (game, parent) {
-  Phaser.Plugin.call(this, game, parent);
-
-  /**
-   * The Arcade Polygons facade.
-   *
-   * @property {Phaser.Plugin.ArcadePolygons.Facade} facade
-   */
-  this.facade = new Phaser.Plugin.ArcadePolygons.Facade();
-};
-
-Phaser.Plugin.ArcadePolygons.prototype = Object.create(Phaser.Plugin.prototype);
-Phaser.Plugin.ArcadePolygons.prototype.constructor = Phaser.Plugin.ArcadePolygons;
-
-/**
- * The Arcade Polygons plugin version number.
- *
- * @constant
- * @type {string}
- */
-Phaser.Plugin.ArcadePolygons.VERSION = '1';
-
-/**
- * Initializes the plugin.
- *
- * @method Phaser.Plugin.ArcadePolygons#init
- */
-Phaser.Plugin.ArcadePolygons.prototype.init = function () {
-  // Give the game an Arcade Polygons facade
-  this.game.arcadePolygons = this.game.arcadePolygons || this.facade;
-
-  // Keep a reference to the original Arcade.collideSpriteVsTilemapLayer method
-  this.originalCollideSpriteVsGroup = Phaser.Physics.Arcade.prototype.collideSpriteVsGroup;
-
-  // Replace the original method with the Arcade Polygons override, along with
-  // some extra methods that break down the functionality a little more
-  Phaser.Physics.Arcade.prototype.collideSpriteVsGroup = Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup;
-};
-
-/**
- * Destroys the plugin and nulls its references. Restores any overriden methods.
- *
- * @method Phaser.Plugin.ArcadePolygons#destroy
- */
-Phaser.Plugin.ArcadePolygons.prototype.destroy = function () {
-  // Null the game's reference to the facade
-  this.game.arcadePolygons = null;
-
-  // Restore the original collideSpriteVsTilemapLayer method and null the rest
-  Phaser.Physics.Arcade.prototype.collideSpriteVsGroup = this.originalCollideSpriteVsGroup;
-
-  // Call the parent destroy method
-  Phaser.Plugin.prototype.destroy.call(this);
-};
-
-/**
- * A facade class to attach to a Phaser game.
- *
- * @class Phaser.Plugin.ArcadePolygons.Facade
- * @constructor
- * @param {Phaser.Plugin.ArcadePolygons.TileSlopeFactory} factory     - A tile slope factory.
- * @param {object}                                      solvers       - A set of collision solvers.
- * @param {integer}                                     defaultSolver - The default collision solver type to use for sloped tiles.
- */
-Phaser.Plugin.ArcadePolygons.Facade = function () {};
-
-/**
- * Enable the physics body of the given object for SAT polygon interaction.
- *
- * @method Phaser.Plugin.ArcadePolygons.Facade#enable
- * @param {Phaser.Sprite|Phaser.Group} object - The group to enable polygon physics for.
- * @param {SAT} object - The object that describes the type of polygon to create.
- */
-Phaser.Plugin.ArcadePolygons.Facade.prototype.enable = function (object, vertices) {
-  if (Array.isArray(object)) {
-    for (var i = 0; i < object.length; i++) {
-      this.enable(object[i]);
-    }
-  } else {
-    if (object instanceof Phaser.Group) {
-      this.enable(object.children);
-    } else {
-      if (object.hasOwnProperty('body')) {
-        this.enableBody(object.body, vertices);
-      }
-
-      if (object.hasOwnProperty('children') && object.children.length > 0) {
-        this.enable(object.children);
-      }
-    }
-  }
-};
-
-/**
- * Enable the given physics body for polygon interaction.
- *
- * @method Phaser.Plugin.ArcadePolygons.Facade#enableBody
- * @param {Phaser.Physics.Arcade.Body} body - The physics body to enable.
- */
-Phaser.Plugin.ArcadePolygons.Facade.prototype.enableBody = function (body, vertices) {
-  var polygonVectors = [];
-  for (var i = 0; i < vertices.length; i += 2) {
-    polygonVectors.push(new SAT.Vector(vertices[i], vertices[i + 1]));
-  }
-
-  var satPolygon = new SAT.Polygon(new SAT.Vector(0, 0), polygonVectors);
-
-  body.sat = {
-    polygon: satPolygon
-  };
-};
-
-/**
- * Enable the given sprite body with a box polygon.
- *
- * @method Phaser.Plugin.ArcadePolygons.Facade#enableSpriteBody
- * @param {Phaser.Physics.Arcade.Body} body - The physics body to enable.
- */
-Phaser.Plugin.ArcadePolygons.Facade.prototype.enableSpriteBody = function (sprite) {
-  if (!sprite.hasOwnProperty('body')) {
-    console.error('Enable arcade physics before enabling polygon physics.');
-  }
-
-  var body = sprite.body;
-  var satPolygon = new SAT.Box(new SAT.Vector(body.x, body.y), body.width, body.height).toPolygon();
-
-  body.sat = {
-    polygon: satPolygon
-  };
-};
-
-/**
- * Create polygons from an array of points and add them to the defined group.
- *
- * @method Phaser.Plugin.ArcadePolygons.Facade#enableGroup
- * @param {Phaser.Physics.Arcade.Group} group - The group to create polygons for.
- * @param {array} polygonPoints - The physics body to enable.
- * @param {object} scope - The game reference to add sprites too.
- */
-Phaser.Plugin.ArcadePolygons.Facade.prototype.enableGroup = function (group, polygonPoints, scope) {
-  polygonPoints.forEach(function (vertices) {
-    var sprite = scope.game.add.sprite(0, 0);
-
-    scope.game.physics.arcade.enable(sprite);
-    scope.game.arcadePolygons.enable(sprite, vertices);
-
-    sprite.body.immovable = true;
-    sprite.body.allowGravity = false;
-
-    group.add(sprite);
-  });
-};
-
-/**
- * A static class with override methods for Phaser's tilemap collisions and tile
- * neighbour checks.
- *
- * @static
- * @class Phaser.Plugin.ArcadePolygons.Override
- */
-Phaser.Plugin.ArcadePolygons.Overrides = {};
-
-/**
- * Collide a sprite against all polygons.
- *
- * This is used to override Phaser.Physics.Arcade.collideSpriteVsGroup.Polygon().
- *
- * @override Phaser.Physics.Arcade#collideSpriteVsGroup
- * @method Phaser.Plugin.ArcadePolygons.Overrides#collideSpriteVsGroup
- * @param  {Phaser.Sprite}       sprite           - The sprite to check.
- * @param  {Phaser.Group}        group            - The group to check.
- * @param  {function}            collideCallback  - An optional collision callback.
- * @param  {function}            processCallback  - An optional overlap processing callback.
- * @param  {object}              callbackContext  - The context in which to run the callbacks.
- * @param  {boolean}             overlapOnly      - Whether to only check for an overlap.
- * @return {boolean}                              - Whether a collision occurred.
- */
-Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup = function (sprite, group, collideCallback, processCallback, callbackContext, overlapOnly) {
-  if (!sprite.body) {
-    return false;
-  }
-
-  if (!sprite.body.sat) {
-    console.error('Non polygon object!');
-  }
-
-  /**
-  * Some data populated by the update() method for use in the render()
-  * method.
-  *
-  * @type {object<array>}
-  */
-  this.debug = {
-    vectors: [],
-    normals: []
-  };
-
-  /**
-   * Some feature values we can use throughout our game state.
-   *
-   * @type {object}
-   */
-  this.features = {
-    debug: 0,
-    speed: 1000,
-    bounce: 0,
-    gravity: 500,
-    friction: 0,
-    slowMotion: 1
-  };
-
-  var body = sprite.body;
-
-  // Update the player box position
-  body.sat.polygon.pos.x = body.x; // SAT allows us to set polygon
-  body.sat.polygon.pos.y = body.y; // position properties directly
-
-  // Lazily loop over all the polygons. In reality you'd use a quad
-  // tree or some broad phase of collision detection so that you
-  // don't have to test against everything, but we don't need
-  // to get into optimisation here as this is just a test.
-  for (var i in group.children) {
-    var polygon = group.children[i];
-
-    var response = new SAT.Response();
-    var collision = SAT.testPolygonPolygon(body.sat.polygon, polygon.body.sat.polygon, response);
-
-    // Our collision test responded positive, so let's resolve it
-    if (collision) {
-      // Here's our overlap vector - let's invert it so it faces
-      // out of the collision surface
-      var overlapV = response.overlapV.clone().scale(-1);
-
-      // Then add it to the player's position to resolve the
-      // collision!
-      body.position.x += overlapV.x;
-      body.position.y += overlapV.y;
-
-      // Let's update the SAT polygon too for any further polygons
-      body.sat.polygon.pos.x = body.position.x;
-      body.sat.polygon.pos.y = body.position.y;
-
-      /**
-       * And now, let's experiment with - goodness me - velocity!
-       */
-      var velocity = new SAT.Vector(body.velocity.x, body.velocity.y);
-
-      // We need to flip our overlap normal, SAT gives it to us
-      // facing inwards to the collision and we need it facing out
-      var overlapN = response.overlapN.clone().scale(-1);
-
-      // Project our velocity onto the overlap normal
-      var velocityN = velocity.clone().projectN(overlapN);
-
-      // Then work out the surface velocity
-      var velocityT = velocity.clone().sub(velocityN);
-
-      // Scale our normal velocity with a bounce coefficient
-      // Ziggity, biggity, hi! https://youtu.be/Yc8bzl6dqQI
-      var bounce = velocityN.clone().scale(-this.features.bounce);
-
-      // And scale a friction coefficient to the surface velocity
-      var friction = velocityT.clone().scale(1 - this.features.friction);
-
-      // And finally add them together for our new velocity!
-      var newVelocity = friction.clone().add(bounce);
-
-      // Set the new velocity on our physics body
-      body.velocity.x = newVelocity.x;
-      body.velocity.y = newVelocity.y;
-
-      // If debugging is enabled, let's store some of our vectors.
-      // This is why we've declared so many variables above.
-      // Otherwise, we wouldn't need to.
-      if (this.features.debug) {
-        velocity.name = 'velocity';
-        overlapV.name = 'overlapV';
-        overlapN.name = 'overlapN';
-        velocityN.name = 'velocityN';
-        velocityT.name = 'velocityT';
-        bounce.name = 'bounce';
-        friction.name = 'friction';
-        newVelocity.name = 'newVelocity';
-
-        this.debug.vectors.push(velocity, overlapN, velocityN, velocityT, bounce, friction, newVelocity);
-
-        // If detailed debugging is enabled, let's print the
-        // vectors as lines on the screen!
-        if (this.features.debug > 1) {
-          overlapN.colour = '#333';
-          bounce.colour = '#25f';
-          friction.colour = '#f55';
-          newVelocity.colour = '#5f5';
-
-          //
-          overlapN.scale(50);
-
-          this.debug.normals.push(overlapN, bounce, friction, newVelocity);
-        }
-      }
-    }
-  }
-}
-
 // Version 0.6.0 - Copyright 2012 - 2016 -  Jim Riecken <jimr@jimr.ca>
 //
 // Released under the MIT License - https://github.com/jriecken/sat-js
@@ -359,7 +37,7 @@ Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup = function (sprite, 
   } else {
     root['SAT'] = factory();
   }
-}(undefined, function () {
+})(undefined, function () {
   "use strict";
 
   var SAT = {};
@@ -1316,4 +994,326 @@ Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup = function (sprite, 
   SAT['testPolygonPolygon'] = testPolygonPolygon;
 
   return SAT;
-}));
+});
+
+/**
+ * @author Chris Andrew <chris@hexus.io>
+ * @author Michael J. Calkins <michaeljamescalkins@gmail.com>
+ * @copyright 2017 Michael J. Calkins
+ * @license MIT
+ */
+
+/**
+ * Arcade Polygons provides sloped tile functionality for tilemaps that use
+ * Phaser's Arcade physics engine.
+ *
+ * @class Phaser.Plugin.ArcadePolygons
+ * @constructor
+ * @extends Phaser.Plugin
+ * @param {Phaser.Game} game          - A reference to the game using this plugin.
+ * @param {any}         parent        - The object that owns this plugin, usually a Phaser.PluginManager.
+ * @param {integer}     defaultSolver - The default collision solver type to use for sloped tiles.
+ */
+Phaser.Plugin.ArcadePolygons = function (game, parent) {
+  Phaser.Plugin.call(this, game, parent);
+
+  /**
+   * The Arcade Polygons facade.
+   *
+   * @property {Phaser.Plugin.ArcadePolygons.Facade} facade
+   */
+  this.facade = new Phaser.Plugin.ArcadePolygons.Facade();
+};
+
+Phaser.Plugin.ArcadePolygons.prototype = Object.create(Phaser.Plugin.prototype);
+Phaser.Plugin.ArcadePolygons.prototype.constructor = Phaser.Plugin.ArcadePolygons;
+
+/**
+ * The Arcade Polygons plugin version number.
+ *
+ * @constant
+ * @type {string}
+ */
+Phaser.Plugin.ArcadePolygons.VERSION = '1';
+
+/**
+ * Initializes the plugin.
+ *
+ * @method Phaser.Plugin.ArcadePolygons#init
+ */
+Phaser.Plugin.ArcadePolygons.prototype.init = function () {
+  // Give the game an Arcade Polygons facade
+  this.game.arcadePolygons = this.game.arcadePolygons || this.facade;
+
+  // Keep a reference to the original Arcade.collideSpriteVsTilemapLayer method
+  this.originalCollideSpriteVsGroup = Phaser.Physics.Arcade.prototype.collideSpriteVsGroup;
+
+  // Replace the original method with the Arcade Polygons override, along with
+  // some extra methods that break down the functionality a little more
+  Phaser.Physics.Arcade.prototype.collideSpriteVsGroup = Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup;
+};
+
+/**
+ * Destroys the plugin and nulls its references. Restores any overriden methods.
+ *
+ * @method Phaser.Plugin.ArcadePolygons#destroy
+ */
+Phaser.Plugin.ArcadePolygons.prototype.destroy = function () {
+  // Null the game's reference to the facade
+  this.game.arcadePolygons = null;
+
+  // Restore the original collideSpriteVsTilemapLayer method and null the rest
+  Phaser.Physics.Arcade.prototype.collideSpriteVsGroup = this.originalCollideSpriteVsGroup;
+
+  // Call the parent destroy method
+  Phaser.Plugin.prototype.destroy.call(this);
+};
+
+/**
+ * A facade class to attach to a Phaser game.
+ *
+ * @class Phaser.Plugin.ArcadePolygons.Facade
+ * @constructor
+ * @param {Phaser.Plugin.ArcadePolygons.TileSlopeFactory} factory     - A tile slope factory.
+ * @param {object}                                      solvers       - A set of collision solvers.
+ * @param {integer}                                     defaultSolver - The default collision solver type to use for sloped tiles.
+ */
+Phaser.Plugin.ArcadePolygons.Facade = function () {};
+
+/**
+ * Enable the physics body of the given object for SAT polygon interaction.
+ *
+ * @method Phaser.Plugin.ArcadePolygons.Facade#enable
+ * @param {Phaser.Sprite|Phaser.Group} object - The group to enable polygon physics for.
+ * @param {SAT} object - The object that describes the type of polygon to create.
+ */
+Phaser.Plugin.ArcadePolygons.Facade.prototype.enable = function (object, vertices) {
+  if (Array.isArray(object)) {
+    for (var i = 0; i < object.length; i++) {
+      this.enable(object[i]);
+    }
+  } else {
+    if (object instanceof Phaser.Group) {
+      this.enable(object.children);
+    } else {
+      if (object.hasOwnProperty('body')) {
+        this.enableBody(object.body, vertices);
+      }
+
+      if (object.hasOwnProperty('children') && object.children.length > 0) {
+        this.enable(object.children);
+      }
+    }
+  }
+};
+
+/**
+ * Enable the given physics body for polygon interaction.
+ *
+ * @method Phaser.Plugin.ArcadePolygons.Facade#enableBody
+ * @param {Phaser.Physics.Arcade.Body} body - The physics body to enable.
+ */
+Phaser.Plugin.ArcadePolygons.Facade.prototype.enableBody = function (body, vertices) {
+  var polygonVectors = [];
+  for (var i = 0; i < vertices.length; i += 2) {
+    polygonVectors.push(new SAT.Vector(vertices[i], vertices[i + 1]));
+  }
+
+  var satPolygon = new SAT.Polygon(new SAT.Vector(0, 0), polygonVectors);
+
+  body.sat = {
+    polygon: satPolygon
+  };
+};
+
+/**
+ * Enable the given sprite body with a box polygon.
+ *
+ * @method Phaser.Plugin.ArcadePolygons.Facade#enableSpriteBody
+ * @param {Phaser.Physics.Arcade.Body} body - The physics body to enable.
+ */
+Phaser.Plugin.ArcadePolygons.Facade.prototype.enableSpriteBody = function (sprite) {
+  if (!sprite.hasOwnProperty('body')) {
+    console.error('Enable arcade physics before enabling polygon physics.');
+  }
+
+  var body = sprite.body;
+  var satPolygon = new SAT.Box(new SAT.Vector(body.x, body.y), body.width, body.height).toPolygon();
+
+  body.sat = {
+    polygon: satPolygon
+  };
+};
+
+/**
+ * Create polygons from an array of points and add them to the defined group.
+ *
+ * @method Phaser.Plugin.ArcadePolygons.Facade#enableGroup
+ * @param {Phaser.Physics.Arcade.Group} group - The group to create polygons for.
+ * @param {array} polygonPoints - The physics body to enable.
+ * @param {object} scope - The game reference to add sprites too.
+ */
+Phaser.Plugin.ArcadePolygons.Facade.prototype.enableGroup = function (group, polygonPoints, scope) {
+  polygonPoints.forEach(function (vertices) {
+    var sprite = scope.game.add.sprite(0, 0);
+
+    scope.game.physics.arcade.enable(sprite);
+    scope.game.arcadePolygons.enable(sprite, vertices);
+
+    sprite.body.immovable = true;
+    sprite.body.allowGravity = false;
+
+    group.add(sprite);
+  });
+};
+
+/**
+ * A static class with override methods for Phaser's tilemap collisions and tile
+ * neighbour checks.
+ *
+ * @static
+ * @class Phaser.Plugin.ArcadePolygons.Override
+ */
+Phaser.Plugin.ArcadePolygons.Overrides = {};
+
+/**
+ * Collide a sprite against all polygons.
+ *
+ * This is used to override Phaser.Physics.Arcade.collideSpriteVsGroup.Polygon().
+ *
+ * @override Phaser.Physics.Arcade#collideSpriteVsGroup
+ * @method Phaser.Plugin.ArcadePolygons.Overrides#collideSpriteVsGroup
+ * @param  {Phaser.Sprite}       sprite           - The sprite to check.
+ * @param  {Phaser.Group}        group            - The group to check.
+ * @param  {function}            collideCallback  - An optional collision callback.
+ * @param  {function}            processCallback  - An optional overlap processing callback.
+ * @param  {object}              callbackContext  - The context in which to run the callbacks.
+ * @param  {boolean}             overlapOnly      - Whether to only check for an overlap.
+ * @return {boolean}                              - Whether a collision occurred.
+ */
+Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup = function (sprite, group, collideCallback, processCallback, callbackContext, overlapOnly) {
+  if (!sprite.body) {
+    return false;
+  }
+
+  if (!sprite.body.sat) {
+    console.error('Non polygon object!');
+  }
+
+  /**
+  * Some data populated by the update() method for use in the render()
+  * method.
+  *
+  * @type {object<array>}
+  */
+  this.debug = {
+    vectors: [],
+    normals: []
+  };
+
+  /**
+   * Some feature values we can use throughout our game state.
+   *
+   * @type {object}
+   */
+  this.features = {
+    debug: 0,
+    speed: 1000,
+    bounce: 0,
+    gravity: 500,
+    friction: 0,
+    slowMotion: 1
+  };
+
+  var body = sprite.body;
+
+  // Update the player box position
+  body.sat.polygon.pos.x = body.x; // SAT allows us to set polygon
+  body.sat.polygon.pos.y = body.y; // position properties directly
+
+  // Lazily loop over all the polygons. In reality you'd use a quad
+  // tree or some broad phase of collision detection so that you
+  // don't have to test against everything, but we don't need
+  // to get into optimisation here as this is just a test.
+  for (var i in group.children) {
+    var polygon = group.children[i];
+
+    var response = new SAT.Response();
+    var collision = SAT.testPolygonPolygon(body.sat.polygon, polygon.body.sat.polygon, response);
+
+    // Our collision test responded positive, so let's resolve it
+    if (collision) {
+      // Here's our overlap vector - let's invert it so it faces
+      // out of the collision surface
+      var overlapV = response.overlapV.clone().scale(-1);
+
+      // Then add it to the player's position to resolve the
+      // collision!
+      body.position.x += overlapV.x;
+      body.position.y += overlapV.y;
+
+      // Let's update the SAT polygon too for any further polygons
+      body.sat.polygon.pos.x = body.position.x;
+      body.sat.polygon.pos.y = body.position.y;
+
+      /**
+       * And now, let's experiment with - goodness me - velocity!
+       */
+      var velocity = new SAT.Vector(body.velocity.x, body.velocity.y);
+
+      // We need to flip our overlap normal, SAT gives it to us
+      // facing inwards to the collision and we need it facing out
+      var overlapN = response.overlapN.clone().scale(-1);
+
+      // Project our velocity onto the overlap normal
+      var velocityN = velocity.clone().projectN(overlapN);
+
+      // Then work out the surface velocity
+      var velocityT = velocity.clone().sub(velocityN);
+
+      // Scale our normal velocity with a bounce coefficient
+      // Ziggity, biggity, hi! https://youtu.be/Yc8bzl6dqQI
+      var bounce = velocityN.clone().scale(-this.features.bounce);
+
+      // And scale a friction coefficient to the surface velocity
+      var friction = velocityT.clone().scale(1 - this.features.friction);
+
+      // And finally add them together for our new velocity!
+      var newVelocity = friction.clone().add(bounce);
+
+      // Set the new velocity on our physics body
+      body.velocity.x = newVelocity.x;
+      body.velocity.y = newVelocity.y;
+
+      // If debugging is enabled, let's store some of our vectors.
+      // This is why we've declared so many variables above.
+      // Otherwise, we wouldn't need to.
+      if (this.features.debug) {
+        velocity.name = 'velocity';
+        overlapV.name = 'overlapV';
+        overlapN.name = 'overlapN';
+        velocityN.name = 'velocityN';
+        velocityT.name = 'velocityT';
+        bounce.name = 'bounce';
+        friction.name = 'friction';
+        newVelocity.name = 'newVelocity';
+
+        this.debug.vectors.push(velocity, overlapN, velocityN, velocityT, bounce, friction, newVelocity);
+
+        // If detailed debugging is enabled, let's print the
+        // vectors as lines on the screen!
+        if (this.features.debug > 1) {
+          overlapN.colour = '#333';
+          bounce.colour = '#25f';
+          friction.colour = '#f55';
+          newVelocity.colour = '#5f5';
+
+          //
+          overlapN.scale(50);
+
+          this.debug.normals.push(overlapN, bounce, friction, newVelocity);
+        }
+      }
+    }
+  }
+};
