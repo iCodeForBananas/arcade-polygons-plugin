@@ -113,14 +113,14 @@ Create polygons from an array of points and add them to the defined group.  This
 ```javascript
 const polygonPoints = [
   [
-    0, 0,
-    5, 10,
-    1, 2
+    [0, 0],
+    [5, 10],
+    [1, 2]
   ],
   [
-    100, 100,
-    105, 110,
-    101, 102
+    [100, 100],
+    [105, 110],
+    [101, 102]
   ]
 ]
 const ground = this.game.add.group()
