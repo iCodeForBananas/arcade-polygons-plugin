@@ -1,9 +1,28 @@
 {
-  "private": false,
-  "engines": {
-    "node": "6.9.4",
-    "npm": "3.10.10"
+  "name": "arcade-polygons-plugin",
+  "version": "1.0.0",
+  "description": "A Phaser plugin that enables polygons in arcade physics.",
+  "main": "dist/phaser-arcade-slopes.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:michaeljcalkins/arcade-polygons-plugin.git"
   },
+  "keywords": [
+    "phaser",
+    "plugin",
+    "arcade",
+    "physics",
+    "polygons",
+    "collision",
+    "collisions",
+    "collision handling",
+    "collision detection",
+    "games"
+  ],
+  "author": "Michael Calkins <michaeljamescalkins@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/michaeljcalkins/arcade-polygon-plugin",
   "standard": {
     "globals": [
       "Phaser",
