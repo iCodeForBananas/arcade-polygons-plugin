@@ -1,7 +1,8 @@
 <html>
   <head>
     <link rel="stylesheet" href="./styles.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sat/0.6.0/SAT.min.js"></script>
+    <script src="../node_modules/poly-decomp/build/decomp.min.js"></script>
+    <script src="../node_modules/sat/SAT.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/2.6.2/phaser.min.js"></script>
     <script src="../dist/arcade-polygons-plugin.js"></script>
   </head>
@@ -40,7 +41,7 @@
         </label>
         <label>
           Debug: <span class="debug"></span>
-          <input type="range" class="control" data-feature="debug" value="0" min="0" max="2"/>
+          <input type="range" class="control" data-feature="debug" value="0" min="0" max="1"/>
         </label>
       </div>
 
