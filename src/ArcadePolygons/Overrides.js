@@ -1,3 +1,5 @@
+const SAT = require('sat')
+
 /**
  * A static class with override methods for Phaser's tilemap collisions and tile
  * neighbour checks.
@@ -5,7 +7,7 @@
  * @static
  * @class Phaser.Plugin.ArcadePolygons.Override
  */
-Phaser.Plugin.ArcadePolygons.Overrides = {}
+const Overrides = {}
 
 /**
  * Collide a sprite against all polygons.
@@ -13,7 +15,7 @@ Phaser.Plugin.ArcadePolygons.Overrides = {}
  * This is used to override Phaser.Physics.Arcade.collideSpriteVsGroup.Polygon().
  *
  * @override Phaser.Physics.Arcade#collideSpriteVsGroup
- * @method Phaser.Plugin.ArcadePolygons.Overrides#collideSpriteVsGroup
+ * @method Overrides#collideSpriteVsGroup
  * @param  {Phaser.Sprite}       sprite           - The sprite to check.
  * @param  {Phaser.Group}        group            - The group to check.
  * @param  {function}            collideCallback  - An optional collision callback.
@@ -22,7 +24,7 @@ Phaser.Plugin.ArcadePolygons.Overrides = {}
  * @param  {boolean}             overlapOnly      - Whether to only check for an overlap.
  * @return {boolean}                              - Whether a collision occurred.
  */
-Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup = function (sprite, group, collideCallback, processCallback, callbackContext, overlapOnly) {
+Overrides.collideSpriteVsGroup = function (sprite, group, collideCallback, processCallback, callbackContext, overlapOnly) {
   if (!sprite.body) {
     return false
   }
@@ -48,12 +50,7 @@ Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup = function (sprite, 
    * @type {object}
    */
   this.features = {
-    debug: 0,
-    speed: 1000,
-    bounce: 0,
-    gravity: 500,
-    friction: 0,
-    slowMotion: 1
+    debug: 0
   }
 
   var body = sprite.body
@@ -104,10 +101,10 @@ Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup = function (sprite, 
 
       // Scale our normal velocity with a bounce coefficient
       // Ziggity, biggity, hi! https://youtu.be/Yc8bzl6dqQI
-      var bounce = velocityN.clone().scale(-this.features.bounce)
+      var bounce = velocityN.clone().scale(-body.sat.bounce)
 
       // And scale a friction coefficient to the surface velocity
-      var friction = velocityT.clone().scale(1 - this.features.friction)
+      var friction = velocityT.clone().scale(1 - body.sat.friction)
 
       // And finally add them together for our new velocity!
       var newVelocity = friction.clone().add(bounce)
@@ -158,3 +155,5 @@ Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup = function (sprite, 
     }
   }
 }
+
+module.exports = Overrides

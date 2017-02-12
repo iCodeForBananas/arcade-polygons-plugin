@@ -34,11 +34,12 @@
   },
   "dependencies": {
     "gulp": "^3.9.1",
-    "gulp-concat": "^2.6.1",
     "gulp-rename": "^1.2.2",
     "gulp-uglify": "^2.0.1",
     "gulp-util": "^3.0.8",
     "poly-decomp": "^0.2.1",
-    "sat": "^0.6.0"
+    "sat": "^0.6.0",
+    "babelify": "^7.3.0",
+    "gulp-browserify": "^0.5.1"
   }
 }

@@ -1,3 +1,6 @@
+const Facade = require('./ArcadePolygons/Facade')
+const Overrides = require('./ArcadePolygons/Overrides')
+
 /**
  * @author Chris Andrew <chris@hexus.io>
  * @author Michael J. Calkins <michaeljamescalkins@gmail.com>
@@ -70,3 +73,6 @@ Phaser.Plugin.ArcadePolygons.prototype.destroy = function () {
   // Call the parent destroy method
   Phaser.Plugin.prototype.destroy.call(this)
 }
+
+Phaser.Plugin.ArcadePolygons.Overrides = Overrides
+Phaser.Plugin.ArcadePolygons.Facade = Facade

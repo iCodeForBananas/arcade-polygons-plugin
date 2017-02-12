@@ -1,8 +1,6 @@
 <html>
   <head>
     <link rel="stylesheet" href="./styles.css" />
-    <script src="../node_modules/poly-decomp/build/decomp.min.js"></script>
-    <script src="../node_modules/sat/SAT.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/2.6.2/phaser.min.js"></script>
     <script src="../dist/arcade-polygons-plugin.js"></script>
   </head>
@@ -14,7 +12,7 @@
 
       <p>A demonstration of the <a target="_blank" href="https://github.com/michaeljcalkins/arcade-polygons-plugin">Arcade Polygons</a> plugin for <a target="_blank" href="http://phaser.io">Phaser</a>.</p>
 
-      <p>Hold <strong>C</strong> for a list of keyboard controls. Use the sliders below to alter the values used in the game state.</p>
+      <p><strong>WASD</strong> to move. Use the sliders below to alter the values used in the game state.</p>
 
       <div id="phaser"></div>
 
@@ -33,7 +31,7 @@
         </label>
         <label>
           Friction: <span class="friction"></span>
-          <input type="range" class="control" data-feature="friction" value="0" min="0" max="10" step="0.05"/>
+          <input type="range" class="control" data-feature="friction" value="0" min="0" max="1" step="0.05"/>
         </label>
         <label>
           Slow motion: <span class="slowMotion"></span>
@@ -44,10 +42,6 @@
           <input type="range" class="control" data-feature="debug" value="0" min="0" max="1"/>
         </label>
       </div>
-
-      <p>
-        <strong>WASD</strong> to move.
-      </p>
     </div>
 
     <script>
@@ -117,7 +111,7 @@
           var playerGraphicsTexture = playerGraphics.generateTexture();
 
           // Add a new sprite to the game world, using the graphics above
-          this.player = this.add.sprite(60, 72, playerGraphicsTexture)
+          this.player = this.add.sprite(150, 200, playerGraphicsTexture)
 
           // Give it an Arcade physics body that we can use
           this.game.physics.arcade.enable(this.player)
@@ -136,11 +130,29 @@
           this.polygons = this.game.add.group()
 
           var polygonPoints = [
+            // Static absolute polygon
             [
               0, 750,
               1280, 700,
               1280, 800,
               0, 800,
+            ],
+            // Static absolute polygon ready for decomposition
+            [
+              [260, 180],
+              [362, 220],
+              [448, 182],
+              [384, 306],
+              [293, 219]
+            ],
+            // TODO: Relative polygon ready for decomposition
+            [
+              [50, 0],
+              [150, 0],
+              [100, 75],
+              [150, 150],
+              [50, 150],
+              [0, 75]
             ],
             [
               0, 116,
@@ -188,8 +200,7 @@
             ]
           ]
 
-          // Potential future api to avoid the below loop
-          this.game.physics.arcade.enable(this.polygons)
+          // Convert polygons points into game objects
           this.game.arcadePolygons.enableGroup(this.polygons, polygonPoints, this)
 
           // Render the polygons so that we can see them!
@@ -241,17 +252,13 @@
             console.log(`${x}, ${y},`)
           }
 
-          /**
-           * Now that the physics is out of the way, we can apply velocity
-           * to our player by using acceleration.
-           */
-
-          // Let's apply some feature values
-          gravity.y = this.features.gravity;
-          body.bounce.setTo(this.features.bounce);
-          body.maxVelocity.x = this.features.speed;
-          body.maxVelocity.y = this.features.speed;
-          this.time.slowMotion = this.features.slowMotion;
+          // Apply user options from the controls
+          gravity.y = this.features.gravity
+          body.maxVelocity.x = this.features.speed
+          body.maxVelocity.y = this.features.speed
+          body.sat.friction = this.features.friction
+          body.sat.bounce = this.features.bounce
+          this.time.slowMotion = this.features.slowMotion
 
           // Reset the player body's acceleration
           if (!(controls.left.isDown || controls.right.isDown)) {
@@ -359,8 +366,8 @@
       var updateValue = function (control) {
         var feature = control.getAttribute('data-feature');
         var value = parseFloat(control.value);
-
-        state.features[feature] = value;
+        console.log(feature, value)
+        state.features[feature] = value
         $('.' + feature)[0].innerText = value;
       }
 
@@ -368,7 +375,7 @@
         // Update the game state's values with control values
         Array.prototype.forEach.call($('.control'), function (control) {
           // To begin with
-          updateValue(control);
+          updateValue(control)
 
           // And when they change
           control.addEventListener('input', function (event) {

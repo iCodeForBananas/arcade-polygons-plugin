@@ -1,3 +1,605 @@
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+module.exports = {
+    decomp: polygonDecomp,
+    quickDecomp: polygonQuickDecomp,
+    isSimple: polygonIsSimple,
+    removeCollinearPoints: polygonRemoveCollinearPoints,
+    makeCCW: polygonMakeCCW
+};
+
+/**
+ * Compute the intersection between two lines.
+ * @static
+ * @method lineInt
+ * @param  {Array}  l1          Line vector 1
+ * @param  {Array}  l2          Line vector 2
+ * @param  {Number} precision   Precision to use when checking if the lines are parallel
+ * @return {Array}              The intersection point.
+ */
+function lineInt(l1,l2,precision){
+    precision = precision || 0;
+    var i = [0,0]; // point
+    var a1, b1, c1, a2, b2, c2, det; // scalars
+    a1 = l1[1][1] - l1[0][1];
+    b1 = l1[0][0] - l1[1][0];
+    c1 = a1 * l1[0][0] + b1 * l1[0][1];
+    a2 = l2[1][1] - l2[0][1];
+    b2 = l2[0][0] - l2[1][0];
+    c2 = a2 * l2[0][0] + b2 * l2[0][1];
+    det = a1 * b2 - a2*b1;
+    if (!scalar_eq(det, 0, precision)) { // lines are not parallel
+        i[0] = (b2 * c1 - b1 * c2) / det;
+        i[1] = (a1 * c2 - a2 * c1) / det;
+    }
+    return i;
+}
+
+/**
+ * Checks if two line segments intersects.
+ * @method segmentsIntersect
+ * @param {Array} p1 The start vertex of the first line segment.
+ * @param {Array} p2 The end vertex of the first line segment.
+ * @param {Array} q1 The start vertex of the second line segment.
+ * @param {Array} q2 The end vertex of the second line segment.
+ * @return {Boolean} True if the two line segments intersect
+ */
+function lineSegmentsIntersect(p1, p2, q1, q2){
+	var dx = p2[0] - p1[0];
+	var dy = p2[1] - p1[1];
+	var da = q2[0] - q1[0];
+	var db = q2[1] - q1[1];
+
+	// segments are parallel
+	if((da*dy - db*dx) === 0){
+		return false;
+	}
+
+	var s = (dx * (q1[1] - p1[1]) + dy * (p1[0] - q1[0])) / (da * dy - db * dx);
+	var t = (da * (p1[1] - q1[1]) + db * (q1[0] - p1[0])) / (db * dx - da * dy);
+
+	return (s>=0 && s<=1 && t>=0 && t<=1);
+}
+
+/**
+ * Get the area of a triangle spanned by the three given points. Note that the area will be negative if the points are not given in counter-clockwise order.
+ * @static
+ * @method area
+ * @param  {Array} a
+ * @param  {Array} b
+ * @param  {Array} c
+ * @return {Number}
+ */
+function triangleArea(a,b,c){
+    return (((b[0] - a[0])*(c[1] - a[1]))-((c[0] - a[0])*(b[1] - a[1])));
+}
+
+function isLeft(a,b,c){
+    return triangleArea(a,b,c) > 0;
+}
+
+function isLeftOn(a,b,c) {
+    return triangleArea(a, b, c) >= 0;
+}
+
+function isRight(a,b,c) {
+    return triangleArea(a, b, c) < 0;
+}
+
+function isRightOn(a,b,c) {
+    return triangleArea(a, b, c) <= 0;
+}
+
+var tmpPoint1 = [],
+    tmpPoint2 = [];
+
+/**
+ * Check if three points are collinear
+ * @method collinear
+ * @param  {Array} a
+ * @param  {Array} b
+ * @param  {Array} c
+ * @param  {Number} [thresholdAngle=0] Threshold angle to use when comparing the vectors. The function will return true if the angle between the resulting vectors is less than this value. Use zero for max precision.
+ * @return {Boolean}
+ */
+function collinear(a,b,c,thresholdAngle) {
+    if(!thresholdAngle){
+        return triangleArea(a, b, c) === 0;
+    } else {
+        var ab = tmpPoint1,
+            bc = tmpPoint2;
+
+        ab[0] = b[0]-a[0];
+        ab[1] = b[1]-a[1];
+        bc[0] = c[0]-b[0];
+        bc[1] = c[1]-b[1];
+
+        var dot = ab[0]*bc[0] + ab[1]*bc[1],
+            magA = Math.sqrt(ab[0]*ab[0] + ab[1]*ab[1]),
+            magB = Math.sqrt(bc[0]*bc[0] + bc[1]*bc[1]),
+            angle = Math.acos(dot/(magA*magB));
+        return angle < thresholdAngle;
+    }
+}
+
+function sqdist(a,b){
+    var dx = b[0] - a[0];
+    var dy = b[1] - a[1];
+    return dx * dx + dy * dy;
+}
+
+/**
+ * Get a vertex at position i. It does not matter if i is out of bounds, this function will just cycle.
+ * @method at
+ * @param  {Number} i
+ * @return {Array}
+ */
+function polygonAt(polygon, i){
+    var s = polygon.length;
+    return polygon[i < 0 ? i % s + s : i % s];
+}
+
+/**
+ * Clear the polygon data
+ * @method clear
+ * @return {Array}
+ */
+function polygonClear(polygon){
+    polygon.length = 0;
+}
+
+/**
+ * Append points "from" to "to"-1 from an other polygon "poly" onto this one.
+ * @method append
+ * @param {Polygon} poly The polygon to get points from.
+ * @param {Number}  from The vertex index in "poly".
+ * @param {Number}  to The end vertex index in "poly". Note that this vertex is NOT included when appending.
+ * @return {Array}
+ */
+function polygonAppend(polygon, poly, from, to){
+    for(var i=from; i<to; i++){
+        polygon.push(poly[i]);
+    }
+}
+
+/**
+ * Make sure that the polygon vertices are ordered counter-clockwise.
+ * @method makeCCW
+ */
+function polygonMakeCCW(polygon){
+    var br = 0,
+        v = polygon;
+
+    // find bottom right point
+    for (var i = 1; i < polygon.length; ++i) {
+        if (v[i][1] < v[br][1] || (v[i][1] === v[br][1] && v[i][0] > v[br][0])) {
+            br = i;
+        }
+    }
+
+    // reverse poly if clockwise
+    if (!isLeft(polygonAt(polygon, br - 1), polygonAt(polygon, br), polygonAt(polygon, br + 1))) {
+        polygonReverse(polygon);
+    }
+}
+
+/**
+ * Reverse the vertices in the polygon
+ * @method reverse
+ */
+function polygonReverse(polygon){
+    var tmp = [];
+    var N = polygon.length;
+    for(var i=0; i!==N; i++){
+        tmp.push(polygon.pop());
+    }
+    for(var i=0; i!==N; i++){
+		polygon[i] = tmp[i];
+    }
+}
+
+/**
+ * Check if a point in the polygon is a reflex point
+ * @method isReflex
+ * @param  {Number}  i
+ * @return {Boolean}
+ */
+function polygonIsReflex(polygon, i){
+    return isRight(polygonAt(polygon, i - 1), polygonAt(polygon, i), polygonAt(polygon, i + 1));
+}
+
+var tmpLine1=[],
+    tmpLine2=[];
+
+/**
+ * Check if two vertices in the polygon can see each other
+ * @method canSee
+ * @param  {Number} a Vertex index 1
+ * @param  {Number} b Vertex index 2
+ * @return {Boolean}
+ */
+function polygonCanSee(polygon, a,b) {
+    var p, dist, l1=tmpLine1, l2=tmpLine2;
+
+    if (isLeftOn(polygonAt(polygon, a + 1), polygonAt(polygon, a), polygonAt(polygon, b)) && isRightOn(polygonAt(polygon, a - 1), polygonAt(polygon, a), polygonAt(polygon, b))) {
+        return false;
+    }
+    dist = sqdist(polygonAt(polygon, a), polygonAt(polygon, b));
+    for (var i = 0; i !== polygon.length; ++i) { // for each edge
+        if ((i + 1) % polygon.length === a || i === a){ // ignore incident edges
+            continue;
+        }
+        if (isLeftOn(polygonAt(polygon, a), polygonAt(polygon, b), polygonAt(polygon, i + 1)) && isRightOn(polygonAt(polygon, a), polygonAt(polygon, b), polygonAt(polygon, i))) { // if diag intersects an edge
+            l1[0] = polygonAt(polygon, a);
+            l1[1] = polygonAt(polygon, b);
+            l2[0] = polygonAt(polygon, i);
+            l2[1] = polygonAt(polygon, i + 1);
+            p = lineInt(l1,l2);
+            if (sqdist(polygonAt(polygon, a), p) < dist) { // if edge is blocking visibility to b
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+/**
+ * Copy the polygon from vertex i to vertex j.
+ * @method copy
+ * @param  {Number} i
+ * @param  {Number} j
+ * @param  {Polygon} [targetPoly]   Optional target polygon to save in.
+ * @return {Polygon}                The resulting copy.
+ */
+function polygonCopy(polygon, i,j,targetPoly){
+    var p = targetPoly || [];
+    polygonClear(p);
+    if (i < j) {
+        // Insert all vertices from i to j
+        for(var k=i; k<=j; k++){
+            p.push(polygon[k]);
+        }
+
+    } else {
+
+        // Insert vertices 0 to j
+        for(var k=0; k<=j; k++){
+            p.push(polygon[k]);
+        }
+
+        // Insert vertices i to end
+        for(var k=i; k<polygon.length; k++){
+            p.push(polygon[k]);
+        }
+    }
+
+    return p;
+}
+
+/**
+ * Decomposes the polygon into convex pieces. Returns a list of edges [[p1,p2],[p2,p3],...] that cuts the polygon.
+ * Note that this algorithm has complexity O(N^4) and will be very slow for polygons with many vertices.
+ * @method getCutEdges
+ * @return {Array}
+ */
+function polygonGetCutEdges(polygon) {
+    var min=[], tmp1=[], tmp2=[], tmpPoly = [];
+    var nDiags = Number.MAX_VALUE;
+
+    for (var i = 0; i < polygon.length; ++i) {
+        if (polygonIsReflex(polygon, i)) {
+            for (var j = 0; j < polygon.length; ++j) {
+                if (polygonCanSee(polygon, i, j)) {
+                    tmp1 = polygonGetCutEdges(polygonCopy(polygon, i, j, tmpPoly));
+                    tmp2 = polygonGetCutEdges(polygonCopy(polygon, j, i, tmpPoly));
+
+                    for(var k=0; k<tmp2.length; k++){
+                        tmp1.push(tmp2[k]);
+                    }
+
+                    if (tmp1.length < nDiags) {
+                        min = tmp1;
+                        nDiags = tmp1.length;
+                        min.push([polygonAt(polygon, i), polygonAt(polygon, j)]);
+                    }
+                }
+            }
+        }
+    }
+
+    return min;
+}
+
+/**
+ * Decomposes the polygon into one or more convex sub-Polygons.
+ * @method decomp
+ * @return {Array} An array or Polygon objects.
+ */
+function polygonDecomp(polygon){
+    var edges = polygonGetCutEdges(polygon);
+    if(edges.length > 0){
+        return polygonSlice(polygon, edges);
+    } else {
+        return [polygon];
+    }
+}
+
+/**
+ * Slices the polygon given one or more cut edges. If given one, this function will return two polygons (false on failure). If many, an array of polygons.
+ * @method slice
+ * @param {Array} cutEdges A list of edges, as returned by .getCutEdges()
+ * @return {Array}
+ */
+function polygonSlice(polygon, cutEdges){
+    if(cutEdges.length === 0){
+		return [polygon];
+    }
+    if(cutEdges instanceof Array && cutEdges.length && cutEdges[0] instanceof Array && cutEdges[0].length===2 && cutEdges[0][0] instanceof Array){
+
+        var polys = [polygon];
+
+        for(var i=0; i<cutEdges.length; i++){
+            var cutEdge = cutEdges[i];
+            // Cut all polys
+            for(var j=0; j<polys.length; j++){
+                var poly = polys[j];
+                var result = polygonSlice(poly, cutEdge);
+                if(result){
+                    // Found poly! Cut and quit
+                    polys.splice(j,1);
+                    polys.push(result[0],result[1]);
+                    break;
+                }
+            }
+        }
+
+        return polys;
+    } else {
+
+        // Was given one edge
+        var cutEdge = cutEdges;
+        var i = polygon.indexOf(cutEdge[0]);
+        var j = polygon.indexOf(cutEdge[1]);
+
+        if(i !== -1 && j !== -1){
+            return [polygonCopy(polygon, i,j),
+                    polygonCopy(polygon, j,i)];
+        } else {
+            return false;
+        }
+    }
+}
+
+/**
+ * Checks that the line segments of this polygon do not intersect each other.
+ * @method isSimple
+ * @param  {Array} path An array of vertices e.g. [[0,0],[0,1],...]
+ * @return {Boolean}
+ * @todo Should it check all segments with all others?
+ */
+function polygonIsSimple(polygon){
+    var path = polygon, i;
+    // Check
+    for(i=0; i<path.length-1; i++){
+        for(var j=0; j<i-1; j++){
+            if(lineSegmentsIntersect(path[i], path[i+1], path[j], path[j+1] )){
+                return false;
+            }
+        }
+    }
+
+    // Check the segment between the last and the first point to all others
+    for(i=1; i<path.length-2; i++){
+        if(lineSegmentsIntersect(path[0], path[path.length-1], path[i], path[i+1] )){
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function getIntersectionPoint(p1, p2, q1, q2, delta){
+	delta = delta || 0;
+	var a1 = p2[1] - p1[1];
+	var b1 = p1[0] - p2[0];
+	var c1 = (a1 * p1[0]) + (b1 * p1[1]);
+	var a2 = q2[1] - q1[1];
+	var b2 = q1[0] - q2[0];
+	var c2 = (a2 * q1[0]) + (b2 * q1[1]);
+	var det = (a1 * b2) - (a2 * b1);
+
+	if(!scalar_eq(det,0,delta)){
+		return [((b2 * c1) - (b1 * c2)) / det, ((a1 * c2) - (a2 * c1)) / det];
+	} else {
+		return [0,0];
+    }
+}
+
+/**
+ * Quickly decompose the Polygon into convex sub-polygons.
+ * @method quickDecomp
+ * @param  {Array} result
+ * @param  {Array} [reflexVertices]
+ * @param  {Array} [steinerPoints]
+ * @param  {Number} [delta]
+ * @param  {Number} [maxlevel]
+ * @param  {Number} [level]
+ * @return {Array}
+ */
+function polygonQuickDecomp(polygon, result,reflexVertices,steinerPoints,delta,maxlevel,level){
+    maxlevel = maxlevel || 100;
+    level = level || 0;
+    delta = delta || 25;
+    result = typeof(result)!=="undefined" ? result : [];
+    reflexVertices = reflexVertices || [];
+    steinerPoints = steinerPoints || [];
+
+    var upperInt=[0,0], lowerInt=[0,0], p=[0,0]; // Points
+    var upperDist=0, lowerDist=0, d=0, closestDist=0; // scalars
+    var upperIndex=0, lowerIndex=0, closestIndex=0; // Integers
+    var lowerPoly=[], upperPoly=[]; // polygons
+    var poly = polygon,
+        v = polygon;
+
+    if(v.length < 3){
+		return result;
+    }
+
+    level++;
+    if(level > maxlevel){
+        console.warn("quickDecomp: max level ("+maxlevel+") reached.");
+        return result;
+    }
+
+    for (var i = 0; i < polygon.length; ++i) {
+        if (polygonIsReflex(poly, i)) {
+            reflexVertices.push(poly[i]);
+            upperDist = lowerDist = Number.MAX_VALUE;
+
+
+            for (var j = 0; j < polygon.length; ++j) {
+                if (isLeft(polygonAt(poly, i - 1), polygonAt(poly, i), polygonAt(poly, j)) && isRightOn(polygonAt(poly, i - 1), polygonAt(poly, i), polygonAt(poly, j - 1))) { // if line intersects with an edge
+                    p = getIntersectionPoint(polygonAt(poly, i - 1), polygonAt(poly, i), polygonAt(poly, j), polygonAt(poly, j - 1)); // find the point of intersection
+                    if (isRight(polygonAt(poly, i + 1), polygonAt(poly, i), p)) { // make sure it's inside the poly
+                        d = sqdist(poly[i], p);
+                        if (d < lowerDist) { // keep only the closest intersection
+                            lowerDist = d;
+                            lowerInt = p;
+                            lowerIndex = j;
+                        }
+                    }
+                }
+                if (isLeft(polygonAt(poly, i + 1), polygonAt(poly, i), polygonAt(poly, j + 1)) && isRightOn(polygonAt(poly, i + 1), polygonAt(poly, i), polygonAt(poly, j))) {
+                    p = getIntersectionPoint(polygonAt(poly, i + 1), polygonAt(poly, i), polygonAt(poly, j), polygonAt(poly, j + 1));
+                    if (isLeft(polygonAt(poly, i - 1), polygonAt(poly, i), p)) {
+                        d = sqdist(poly[i], p);
+                        if (d < upperDist) {
+                            upperDist = d;
+                            upperInt = p;
+                            upperIndex = j;
+                        }
+                    }
+                }
+            }
+
+            // if there are no vertices to connect to, choose a point in the middle
+            if (lowerIndex === (upperIndex + 1) % polygon.length) {
+                //console.log("Case 1: Vertex("+i+"), lowerIndex("+lowerIndex+"), upperIndex("+upperIndex+"), poly.size("+polygon.length+")");
+                p[0] = (lowerInt[0] + upperInt[0]) / 2;
+                p[1] = (lowerInt[1] + upperInt[1]) / 2;
+                steinerPoints.push(p);
+
+                if (i < upperIndex) {
+                    //lowerPoly.insert(lowerPoly.end(), poly.begin() + i, poly.begin() + upperIndex + 1);
+                    polygonAppend(lowerPoly, poly, i, upperIndex+1);
+                    lowerPoly.push(p);
+                    upperPoly.push(p);
+                    if (lowerIndex !== 0){
+                        //upperPoly.insert(upperPoly.end(), poly.begin() + lowerIndex, poly.end());
+                        polygonAppend(upperPoly, poly,lowerIndex,poly.length);
+                    }
+                    //upperPoly.insert(upperPoly.end(), poly.begin(), poly.begin() + i + 1);
+                    polygonAppend(upperPoly, poly,0,i+1);
+                } else {
+                    if (i !== 0){
+                        //lowerPoly.insert(lowerPoly.end(), poly.begin() + i, poly.end());
+                        polygonAppend(lowerPoly, poly,i,poly.length);
+                    }
+                    //lowerPoly.insert(lowerPoly.end(), poly.begin(), poly.begin() + upperIndex + 1);
+                    polygonAppend(lowerPoly, poly,0,upperIndex+1);
+                    lowerPoly.push(p);
+                    upperPoly.push(p);
+                    //upperPoly.insert(upperPoly.end(), poly.begin() + lowerIndex, poly.begin() + i + 1);
+                    polygonAppend(upperPoly, poly,lowerIndex,i+1);
+                }
+            } else {
+                // connect to the closest point within the triangle
+                //console.log("Case 2: Vertex("+i+"), closestIndex("+closestIndex+"), poly.size("+polygon.length+")\n");
+
+                if (lowerIndex > upperIndex) {
+                    upperIndex += polygon.length;
+                }
+                closestDist = Number.MAX_VALUE;
+
+                if(upperIndex < lowerIndex){
+                    return result;
+                }
+
+                for (var j = lowerIndex; j <= upperIndex; ++j) {
+                    if (isLeftOn(polygonAt(poly, i - 1), polygonAt(poly, i), polygonAt(poly, j)) && isRightOn(polygonAt(poly, i + 1), polygonAt(poly, i), polygonAt(poly, j))) {
+                        d = sqdist(polygonAt(poly, i), polygonAt(poly, j));
+                        if (d < closestDist) {
+                            closestDist = d;
+                            closestIndex = j % polygon.length;
+                        }
+                    }
+                }
+
+                if (i < closestIndex) {
+                    polygonAppend(lowerPoly, poly,i,closestIndex+1);
+                    if (closestIndex !== 0){
+                        polygonAppend(upperPoly, poly,closestIndex,v.length);
+                    }
+                    polygonAppend(upperPoly, poly,0,i+1);
+                } else {
+                    if (i !== 0){
+                        polygonAppend(lowerPoly, poly,i,v.length);
+                    }
+                    polygonAppend(lowerPoly, poly,0,closestIndex+1);
+                    polygonAppend(upperPoly, poly,closestIndex,i+1);
+                }
+            }
+
+            // solve smallest poly first
+            if (lowerPoly.length < upperPoly.length) {
+                polygonQuickDecomp(lowerPoly,result,reflexVertices,steinerPoints,delta,maxlevel,level);
+                polygonQuickDecomp(upperPoly,result,reflexVertices,steinerPoints,delta,maxlevel,level);
+            } else {
+                polygonQuickDecomp(upperPoly,result,reflexVertices,steinerPoints,delta,maxlevel,level);
+                polygonQuickDecomp(lowerPoly,result,reflexVertices,steinerPoints,delta,maxlevel,level);
+            }
+
+            return result;
+        }
+    }
+    result.push(polygon);
+
+    return result;
+}
+
+/**
+ * Remove collinear points in the polygon.
+ * @method removeCollinearPoints
+ * @param  {Number} [precision] The threshold angle to use when determining whether two edges are collinear. Use zero for finest precision.
+ * @return {Number}           The number of points removed
+ */
+function polygonRemoveCollinearPoints(polygon, precision){
+    var num = 0;
+    for(var i=polygon.length-1; polygon.length>3 && i>=0; --i){
+        if(collinear(polygonAt(polygon, i-1),polygonAt(polygon, i),polygonAt(polygon, i+1),precision)){
+            // Remove the middle point
+            polygon.splice(i%polygon.length,1);
+            num++;
+        }
+    }
+    return num;
+}
+
+/**
+ * Check if two scalars are equal
+ * @static
+ * @method eq
+ * @param  {Number} a
+ * @param  {Number} b
+ * @param  {Number} [precision]
+ * @return {Boolean}
+ */
+function scalar_eq(a,b,precision){
+    precision = precision || 0;
+    return Math.abs(a-b) < precision;
+}
+
+},{}],2:[function(require,module,exports){
 // Version 0.6.0 - Copyright 2012 - 2016 -  Jim Riecken <jimr@jimr.ca>
 //
 // Released under the MIT License - https://github.com/jriecken/sat-js
@@ -987,6 +1589,276 @@
   return SAT;
 }));
 
+},{}],3:[function(require,module,exports){
+const decomp = require('poly-decomp');
+const SAT = require('sat');
+
+/**
+ * A facade class to attach to a Phaser game.
+ *
+ * @class Phaser.Plugin.ArcadePolygons.Facade
+ * @constructor
+ * @param {Phaser.Plugin.ArcadePolygons.TileSlopeFactory} factory     - A tile slope factory.
+ * @param {object}                                      solvers       - A set of collision solvers.
+ * @param {integer}                                     defaultSolver - The default collision solver type to use for sloped tiles.
+ */
+const Facade = function () {};
+
+/**
+ * Enable the physics body of the given object for SAT polygon interaction.
+ *
+ * @method Phaser.Plugin.ArcadePolygons.Facade#enable
+ * @param {Phaser.Sprite|Phaser.Group} object - The group to enable polygon physics for.
+ * @param {SAT} object - The object that describes the type of polygon to create.
+ */
+Facade.prototype.enable = function (object, vertices) {
+  if (Array.isArray(object)) {
+    for (var i = 0; i < object.length; i++) {
+      this.enable(object[i]);
+    }
+  } else {
+    if (object instanceof Phaser.Group) {
+      this.enable(object.children);
+    } else {
+      if (object.hasOwnProperty('body')) {
+        this.enableBody(object.body, vertices);
+      }
+
+      if (object.hasOwnProperty('children') && object.children.length > 0) {
+        this.enable(object.children);
+      }
+    }
+  }
+};
+
+/**
+ * Enable the given physics body for polygon interaction.
+ *
+ * @method Phaser.Plugin.ArcadePolygons.Facade#enableBody
+ * @param {Phaser.Physics.Arcade.Body} body - The physics body to enable.
+ */
+Facade.prototype.enableBody = function (body, vertices) {
+  var polygonVectors = [];
+  for (var i = 0; i < vertices.length; i += 2) {
+    polygonVectors.push(new SAT.Vector(vertices[i], vertices[i + 1]));
+  }
+
+  var satPolygon = new SAT.Polygon(new SAT.Vector(0, 0), polygonVectors);
+
+  body.sat = {
+    polygon: satPolygon
+  };
+};
+
+/**
+ * Enable the given sprite body with a box polygon.
+ *
+ * @method Phaser.Plugin.ArcadePolygons.Facade#enableSpriteBody
+ * @param {Phaser.Physics.Arcade.Body} body - The physics body to enable.
+ */
+Facade.prototype.enableSpriteBody = function (sprite) {
+  if (!sprite.hasOwnProperty('body')) {
+    console.error('Enable arcade physics before enabling polygon physics.');
+  }
+
+  var body = sprite.body;
+  var satPolygon = new SAT.Box(new SAT.Vector(body.x, body.y), body.width, body.height).toPolygon();
+
+  body.sat = {
+    polygon: satPolygon
+  };
+};
+
+/**
+ * Create polygons from an array of points and add them to the defined group.
+ *
+ * @method Phaser.Plugin.ArcadePolygons.Facade#enableGroup
+ * @param {Phaser.Physics.Arcade.Group} group - The group to create polygons for.
+ * @param {array} polygonPoints - The physics body to enable.
+ * @param {object} scope - The game reference to add sprites too.
+ */
+Facade.prototype.enableGroup = function (group, polygonPoints, scope) {
+  var processedPolygonPoints = [];
+  polygonPoints.forEach(function (polygon) {
+    var decomposedPolygonGroup = decomp.quickDecomp(polygon);
+    decomposedPolygonGroup.forEach(function (decomposedPolygon) {
+      // Flatten an array of arrays of points
+      // [[1,2],[3,4],[5,6]] -> [1,2,3,4,5,6]
+      processedPolygonPoints.push(flatten(decomposedPolygon));
+    });
+  });
+
+  processedPolygonPoints.forEach(function (vertices) {
+    var sprite = scope.game.add.sprite(0, 0);
+    scope.game.physics.arcade.enable(sprite);
+    scope.game.arcadePolygons.enable(sprite, vertices);
+    sprite.body.immovable = true;
+    sprite.body.allowGravity = false;
+    group.add(sprite);
+  });
+};
+
+function flatten(array) {
+  return [].concat.apply([], array);
+}
+
+module.exports = Facade;
+
+},{"poly-decomp":1,"sat":2}],4:[function(require,module,exports){
+const SAT = require('sat');
+
+/**
+ * A static class with override methods for Phaser's tilemap collisions and tile
+ * neighbour checks.
+ *
+ * @static
+ * @class Phaser.Plugin.ArcadePolygons.Override
+ */
+const Overrides = {};
+
+/**
+ * Collide a sprite against all polygons.
+ *
+ * This is used to override Phaser.Physics.Arcade.collideSpriteVsGroup.Polygon().
+ *
+ * @override Phaser.Physics.Arcade#collideSpriteVsGroup
+ * @method Overrides#collideSpriteVsGroup
+ * @param  {Phaser.Sprite}       sprite           - The sprite to check.
+ * @param  {Phaser.Group}        group            - The group to check.
+ * @param  {function}            collideCallback  - An optional collision callback.
+ * @param  {function}            processCallback  - An optional overlap processing callback.
+ * @param  {object}              callbackContext  - The context in which to run the callbacks.
+ * @param  {boolean}             overlapOnly      - Whether to only check for an overlap.
+ * @return {boolean}                              - Whether a collision occurred.
+ */
+Overrides.collideSpriteVsGroup = function (sprite, group, collideCallback, processCallback, callbackContext, overlapOnly) {
+  if (!sprite.body) {
+    return false;
+  }
+
+  if (!sprite.body.sat) {
+    console.error('Non polygon object!');
+  }
+
+  /**
+  * Some data populated by the update() method for use in the render()
+  * method.
+  *
+  * @type {object<array>}
+  */
+  this.debug = {
+    vectors: [],
+    normals: []
+  };
+
+  /**
+   * Some feature values we can use throughout our game state.
+   *
+   * @type {object}
+   */
+  this.features = {
+    debug: 0
+  };
+
+  var body = sprite.body;
+
+  // Update the player box position
+  body.sat.polygon.pos.x = body.x; // SAT allows us to set polygon
+  body.sat.polygon.pos.y = body.y; // position properties directly
+
+  // Lazily loop over all the polygons. In reality you'd use a quad
+  // tree or some broad phase of collision detection so that you
+  // don't have to test against everything, but we don't need
+  // to get into optimisation here as this is just a test.
+  for (var i in group.children) {
+    var polygon = group.children[i];
+
+    var response = new SAT.Response();
+    var collision = SAT.testPolygonPolygon(body.sat.polygon, polygon.body.sat.polygon, response);
+
+    // Our collision test responded positive, so let's resolve it
+    if (collision) {
+      // Here's our overlap vector - let's invert it so it faces
+      // out of the collision surface
+      var overlapV = response.overlapV.clone().scale(-1);
+
+      // Then add it to the player's position to resolve the
+      // collision!
+      body.position.x += overlapV.x;
+      body.position.y += overlapV.y;
+
+      // Let's update the SAT polygon too for any further polygons
+      body.sat.polygon.pos.x = body.position.x;
+      body.sat.polygon.pos.y = body.position.y;
+
+      /**
+       * And now, let's experiment with - goodness me - velocity!
+       */
+      var velocity = new SAT.Vector(body.velocity.x, body.velocity.y);
+
+      // We need to flip our overlap normal, SAT gives it to us
+      // facing inwards to the collision and we need it facing out
+      var overlapN = response.overlapN.clone().scale(-1);
+
+      // Project our velocity onto the overlap normal
+      var velocityN = velocity.clone().projectN(overlapN);
+
+      // Then work out the surface velocity
+      var velocityT = velocity.clone().sub(velocityN);
+
+      // Scale our normal velocity with a bounce coefficient
+      // Ziggity, biggity, hi! https://youtu.be/Yc8bzl6dqQI
+      var bounce = velocityN.clone().scale(-body.sat.bounce);
+
+      // And scale a friction coefficient to the surface velocity
+      var friction = velocityT.clone().scale(1 - body.sat.friction);
+
+      // And finally add them together for our new velocity!
+      var newVelocity = friction.clone().add(bounce);
+
+      // Set the new velocity on our physics body
+      body.velocity.x = newVelocity.x;
+      body.velocity.y = newVelocity.y;
+
+      // If debugging is enabled, let's store some of our vectors.
+      // This is why we've declared so many variables above.
+      // Otherwise, we wouldn't need to.
+      if (this.features.debug) {
+        velocity.name = 'velocity';
+        overlapV.name = 'overlapV';
+        overlapN.name = 'overlapN';
+        velocityN.name = 'velocityN';
+        velocityT.name = 'velocityT';
+        bounce.name = 'bounce';
+        friction.name = 'friction';
+        newVelocity.name = 'newVelocity';
+
+        this.debug.vectors.push(velocity, overlapN, velocityN, velocityT, bounce, friction, newVelocity);
+
+        // If detailed debugging is enabled, let's print the
+        // vectors as lines on the screen!
+        if (this.features.debug > 1) {
+          overlapN.colour = '#333';
+          bounce.colour = '#25f';
+          friction.colour = '#f55';
+          newVelocity.colour = '#5f5';
+
+          //
+          overlapN.scale(50);
+
+          this.debug.normals.push(overlapN, bounce, friction, newVelocity);
+        }
+      }
+    }
+  }
+};
+
+module.exports = Overrides;
+
+},{"sat":2}],5:[function(require,module,exports){
+const Facade = require('./ArcadePolygons/Facade');
+const Overrides = require('./ArcadePolygons/Overrides');
+
 /**
  * @author Chris Andrew <chris@hexus.io>
  * @author Michael J. Calkins <michaeljamescalkins@gmail.com>
@@ -1006,18 +1878,18 @@
  * @param {integer}     defaultSolver - The default collision solver type to use for sloped tiles.
  */
 Phaser.Plugin.ArcadePolygons = function (game, parent) {
-  Phaser.Plugin.call(this, game, parent)
+  Phaser.Plugin.call(this, game, parent);
 
   /**
    * The Arcade Polygons facade.
    *
    * @property {Phaser.Plugin.ArcadePolygons.Facade} facade
    */
-  this.facade = new Phaser.Plugin.ArcadePolygons.Facade()
-}
+  this.facade = new Phaser.Plugin.ArcadePolygons.Facade();
+};
 
-Phaser.Plugin.ArcadePolygons.prototype = Object.create(Phaser.Plugin.prototype)
-Phaser.Plugin.ArcadePolygons.prototype.constructor = Phaser.Plugin.ArcadePolygons
+Phaser.Plugin.ArcadePolygons.prototype = Object.create(Phaser.Plugin.prototype);
+Phaser.Plugin.ArcadePolygons.prototype.constructor = Phaser.Plugin.ArcadePolygons;
 
 /**
  * The Arcade Polygons plugin version number.
@@ -1025,7 +1897,7 @@ Phaser.Plugin.ArcadePolygons.prototype.constructor = Phaser.Plugin.ArcadePolygon
  * @constant
  * @type {string}
  */
-Phaser.Plugin.ArcadePolygons.VERSION = '1'
+Phaser.Plugin.ArcadePolygons.VERSION = '1';
 
 /**
  * Initializes the plugin.
@@ -1034,15 +1906,15 @@ Phaser.Plugin.ArcadePolygons.VERSION = '1'
  */
 Phaser.Plugin.ArcadePolygons.prototype.init = function () {
   // Give the game an Arcade Polygons facade
-  this.game.arcadePolygons = this.game.arcadePolygons || this.facade
+  this.game.arcadePolygons = this.game.arcadePolygons || this.facade;
 
   // Keep a reference to the original Arcade.collideSpriteVsTilemapLayer method
-  this.originalCollideSpriteVsGroup = Phaser.Physics.Arcade.prototype.collideSpriteVsGroup
+  this.originalCollideSpriteVsGroup = Phaser.Physics.Arcade.prototype.collideSpriteVsGroup;
 
   // Replace the original method with the Arcade Polygons override, along with
   // some extra methods that break down the functionality a little more
-  Phaser.Physics.Arcade.prototype.collideSpriteVsGroup = Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup
-}
+  Phaser.Physics.Arcade.prototype.collideSpriteVsGroup = Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup;
+};
 
 /**
  * Destroys the plugin and nulls its references. Restores any overriden methods.
@@ -1051,291 +1923,16 @@ Phaser.Plugin.ArcadePolygons.prototype.init = function () {
  */
 Phaser.Plugin.ArcadePolygons.prototype.destroy = function () {
   // Null the game's reference to the facade
-  this.game.arcadePolygons = null
+  this.game.arcadePolygons = null;
 
   // Restore the original collideSpriteVsTilemapLayer method and null the rest
-  Phaser.Physics.Arcade.prototype.collideSpriteVsGroup = this.originalCollideSpriteVsGroup
+  Phaser.Physics.Arcade.prototype.collideSpriteVsGroup = this.originalCollideSpriteVsGroup;
 
   // Call the parent destroy method
-  Phaser.Plugin.prototype.destroy.call(this)
-}
+  Phaser.Plugin.prototype.destroy.call(this);
+};
 
-/**
- * A facade class to attach to a Phaser game.
- *
- * @class Phaser.Plugin.ArcadePolygons.Facade
- * @constructor
- * @param {Phaser.Plugin.ArcadePolygons.TileSlopeFactory} factory     - A tile slope factory.
- * @param {object}                                      solvers       - A set of collision solvers.
- * @param {integer}                                     defaultSolver - The default collision solver type to use for sloped tiles.
- */
-Phaser.Plugin.ArcadePolygons.Facade = function () {}
+Phaser.Plugin.ArcadePolygons.Overrides = Overrides;
+Phaser.Plugin.ArcadePolygons.Facade = Facade;
 
-/**
- * Enable the physics body of the given object for SAT polygon interaction.
- *
- * @method Phaser.Plugin.ArcadePolygons.Facade#enable
- * @param {Phaser.Sprite|Phaser.Group} object - The group to enable polygon physics for.
- * @param {SAT} object - The object that describes the type of polygon to create.
- */
-Phaser.Plugin.ArcadePolygons.Facade.prototype.enable = function (object, vertices) {
-  if (Array.isArray(object)) {
-    for (var i = 0; i < object.length; i++) {
-      this.enable(object[i])
-    }
-  } else {
-    if (object instanceof Phaser.Group) {
-      this.enable(object.children)
-    } else {
-      if (object.hasOwnProperty('body')) {
-        this.enableBody(object.body, vertices)
-      }
-
-      if (object.hasOwnProperty('children') && object.children.length > 0) {
-        this.enable(object.children)
-      }
-    }
-  }
-}
-
-/**
- * Enable the given physics body for polygon interaction.
- *
- * @method Phaser.Plugin.ArcadePolygons.Facade#enableBody
- * @param {Phaser.Physics.Arcade.Body} body - The physics body to enable.
- */
-Phaser.Plugin.ArcadePolygons.Facade.prototype.enableBody = function (body, vertices) {
-  var polygonVectors = []
-  for (var i = 0; i < vertices.length; i += 2) {
-    polygonVectors.push(new SAT.Vector(vertices[i], vertices[i + 1]))
-  }
-
-  var satPolygon = new SAT.Polygon(
-    new SAT.Vector(0, 0),
-    polygonVectors
-  )
-
-  body.sat = {
-    polygon: satPolygon
-  }
-}
-
-/**
- * Enable the given sprite body with a box polygon.
- *
- * @method Phaser.Plugin.ArcadePolygons.Facade#enableSpriteBody
- * @param {Phaser.Physics.Arcade.Body} body - The physics body to enable.
- */
-Phaser.Plugin.ArcadePolygons.Facade.prototype.enableSpriteBody = function (sprite) {
-  if (!sprite.hasOwnProperty('body')) {
-    console.error('Enable arcade physics before enabling polygon physics.')
-  }
-
-  var body = sprite.body
-  var satPolygon = new SAT.Box(
-    new SAT.Vector(body.x, body.y),
-    body.width,
-    body.height
-  ).toPolygon()
-
-  body.sat = {
-    polygon: satPolygon
-  }
-}
-
-/**
- * Create polygons from an array of points and add them to the defined group.
- *
- * @method Phaser.Plugin.ArcadePolygons.Facade#enableGroup
- * @param {Phaser.Physics.Arcade.Group} group - The group to create polygons for.
- * @param {array} polygonPoints - The physics body to enable.
- * @param {object} scope - The game reference to add sprites too.
- */
-Phaser.Plugin.ArcadePolygons.Facade.prototype.enableGroup = function (group, polygonPoints, scope) {
-  var processedPolygonPoints = []
-  polygonPoints.forEach(function (polygon) {
-    var decomposedPolygonGroup = decomp.quickDecomp(polygon)
-    decomposedPolygonGroup.forEach(function (decomposedPolygon) {
-      // Flatten an array of arrays of points
-      // [[1,2],[3,4],[5,6]] -> [1,2,3,4,5,6]
-      processedPolygonPoints.push(flatten(decomposedPolygon))
-    })
-  })
-
-  processedPolygonPoints.forEach(function (vertices) {
-    var sprite = scope.game.add.sprite(0, 0)
-
-    scope.game.physics.arcade.enable(sprite)
-    scope.game.arcadePolygons.enable(sprite, vertices)
-
-    sprite.body.immovable = true
-    sprite.body.allowGravity = false
-
-    group.add(sprite)
-  })
-}
-
-function flatten (array) {
-  return [].concat.apply([], array)
-}
-
-/**
- * A static class with override methods for Phaser's tilemap collisions and tile
- * neighbour checks.
- *
- * @static
- * @class Phaser.Plugin.ArcadePolygons.Override
- */
-Phaser.Plugin.ArcadePolygons.Overrides = {}
-
-/**
- * Collide a sprite against all polygons.
- *
- * This is used to override Phaser.Physics.Arcade.collideSpriteVsGroup.Polygon().
- *
- * @override Phaser.Physics.Arcade#collideSpriteVsGroup
- * @method Phaser.Plugin.ArcadePolygons.Overrides#collideSpriteVsGroup
- * @param  {Phaser.Sprite}       sprite           - The sprite to check.
- * @param  {Phaser.Group}        group            - The group to check.
- * @param  {function}            collideCallback  - An optional collision callback.
- * @param  {function}            processCallback  - An optional overlap processing callback.
- * @param  {object}              callbackContext  - The context in which to run the callbacks.
- * @param  {boolean}             overlapOnly      - Whether to only check for an overlap.
- * @return {boolean}                              - Whether a collision occurred.
- */
-Phaser.Plugin.ArcadePolygons.Overrides.collideSpriteVsGroup = function (sprite, group, collideCallback, processCallback, callbackContext, overlapOnly) {
-  if (!sprite.body) {
-    return false
-  }
-
-  if (!sprite.body.sat) {
-    console.error('Non polygon object!')
-  }
-
-  /**
-  * Some data populated by the update() method for use in the render()
-  * method.
-  *
-  * @type {object<array>}
-  */
-  this.debug = {
-    vectors: [],
-    normals: []
-  }
-
-  /**
-   * Some feature values we can use throughout our game state.
-   *
-   * @type {object}
-   */
-  this.features = {
-    debug: 0,
-    speed: 1000,
-    bounce: 0,
-    gravity: 500,
-    friction: 0,
-    slowMotion: 1
-  }
-
-  var body = sprite.body
-
-  // Update the player box position
-  body.sat.polygon.pos.x = body.x // SAT allows us to set polygon
-  body.sat.polygon.pos.y = body.y // position properties directly
-
-  // Lazily loop over all the polygons. In reality you'd use a quad
-  // tree or some broad phase of collision detection so that you
-  // don't have to test against everything, but we don't need
-  // to get into optimisation here as this is just a test.
-  for (var i in group.children) {
-    var polygon = group.children[i]
-
-    var response = new SAT.Response()
-    var collision = SAT.testPolygonPolygon(body.sat.polygon, polygon.body.sat.polygon, response)
-
-    // Our collision test responded positive, so let's resolve it
-    if (collision) {
-      // Here's our overlap vector - let's invert it so it faces
-      // out of the collision surface
-      var overlapV = response.overlapV.clone().scale(-1)
-
-      // Then add it to the player's position to resolve the
-      // collision!
-      body.position.x += overlapV.x
-      body.position.y += overlapV.y
-
-      // Let's update the SAT polygon too for any further polygons
-      body.sat.polygon.pos.x = body.position.x
-      body.sat.polygon.pos.y = body.position.y
-
-      /**
-       * And now, let's experiment with - goodness me - velocity!
-       */
-      var velocity = new SAT.Vector(body.velocity.x, body.velocity.y)
-
-      // We need to flip our overlap normal, SAT gives it to us
-      // facing inwards to the collision and we need it facing out
-      var overlapN = response.overlapN.clone().scale(-1)
-
-      // Project our velocity onto the overlap normal
-      var velocityN = velocity.clone().projectN(overlapN)
-
-      // Then work out the surface velocity
-      var velocityT = velocity.clone().sub(velocityN)
-
-      // Scale our normal velocity with a bounce coefficient
-      // Ziggity, biggity, hi! https://youtu.be/Yc8bzl6dqQI
-      var bounce = velocityN.clone().scale(-this.features.bounce)
-
-      // And scale a friction coefficient to the surface velocity
-      var friction = velocityT.clone().scale(1 - this.features.friction)
-
-      // And finally add them together for our new velocity!
-      var newVelocity = friction.clone().add(bounce)
-
-      // Set the new velocity on our physics body
-      body.velocity.x = newVelocity.x
-      body.velocity.y = newVelocity.y
-
-      // If debugging is enabled, let's store some of our vectors.
-      // This is why we've declared so many variables above.
-      // Otherwise, we wouldn't need to.
-      if (this.features.debug) {
-        velocity.name = 'velocity'
-        overlapV.name = 'overlapV'
-        overlapN.name = 'overlapN'
-        velocityN.name = 'velocityN'
-        velocityT.name = 'velocityT'
-        bounce.name = 'bounce'
-        friction.name = 'friction'
-        newVelocity.name = 'newVelocity'
-
-        this.debug.vectors.push(
-          velocity,
-          overlapN,
-          velocityN,
-          velocityT,
-          bounce,
-          friction,
-          newVelocity
-        )
-
-        // If detailed debugging is enabled, let's print the
-        // vectors as lines on the screen!
-        if (this.features.debug > 1) {
-          overlapN.colour = '#333'
-          bounce.colour = '#25f'
-          friction.colour = '#f55'
-          newVelocity.colour = '#5f5'
-
-          //
-          overlapN.scale(50)
-
-          this.debug.normals.push(
-            overlapN, bounce, friction, newVelocity
-          )
-        }
-      }
-    }
-  }
-}
+},{"./ArcadePolygons/Facade":3,"./ArcadePolygons/Overrides":4}]},{},[5])

@@ -1,3 +1,6 @@
+const decomp = require('poly-decomp')
+const SAT = require('sat')
+
 /**
  * A facade class to attach to a Phaser game.
  *
@@ -7,7 +10,7 @@
  * @param {object}                                      solvers       - A set of collision solvers.
  * @param {integer}                                     defaultSolver - The default collision solver type to use for sloped tiles.
  */
-Phaser.Plugin.ArcadePolygons.Facade = function () {}
+const Facade = function () {}
 
 /**
  * Enable the physics body of the given object for SAT polygon interaction.
@@ -16,7 +19,7 @@ Phaser.Plugin.ArcadePolygons.Facade = function () {}
  * @param {Phaser.Sprite|Phaser.Group} object - The group to enable polygon physics for.
  * @param {SAT} object - The object that describes the type of polygon to create.
  */
-Phaser.Plugin.ArcadePolygons.Facade.prototype.enable = function (object, vertices) {
+Facade.prototype.enable = function (object, vertices) {
   if (Array.isArray(object)) {
     for (var i = 0; i < object.length; i++) {
       this.enable(object[i])
@@ -42,7 +45,7 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enable = function (object, vertice
  * @method Phaser.Plugin.ArcadePolygons.Facade#enableBody
  * @param {Phaser.Physics.Arcade.Body} body - The physics body to enable.
  */
-Phaser.Plugin.ArcadePolygons.Facade.prototype.enableBody = function (body, vertices) {
+Facade.prototype.enableBody = function (body, vertices) {
   var polygonVectors = []
   for (var i = 0; i < vertices.length; i += 2) {
     polygonVectors.push(new SAT.Vector(vertices[i], vertices[i + 1]))
@@ -64,7 +67,7 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enableBody = function (body, verti
  * @method Phaser.Plugin.ArcadePolygons.Facade#enableSpriteBody
  * @param {Phaser.Physics.Arcade.Body} body - The physics body to enable.
  */
-Phaser.Plugin.ArcadePolygons.Facade.prototype.enableSpriteBody = function (sprite) {
+Facade.prototype.enableSpriteBody = function (sprite) {
   if (!sprite.hasOwnProperty('body')) {
     console.error('Enable arcade physics before enabling polygon physics.')
   }
@@ -89,7 +92,7 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enableSpriteBody = function (sprit
  * @param {array} polygonPoints - The physics body to enable.
  * @param {object} scope - The game reference to add sprites too.
  */
-Phaser.Plugin.ArcadePolygons.Facade.prototype.enableGroup = function (group, polygonPoints, scope) {
+Facade.prototype.enableGroup = function (group, polygonPoints, scope) {
   var processedPolygonPoints = []
   polygonPoints.forEach(function (polygon) {
     var decomposedPolygonGroup = decomp.quickDecomp(polygon)
@@ -102,13 +105,10 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enableGroup = function (group, pol
 
   processedPolygonPoints.forEach(function (vertices) {
     var sprite = scope.game.add.sprite(0, 0)
-
     scope.game.physics.arcade.enable(sprite)
     scope.game.arcadePolygons.enable(sprite, vertices)
-
     sprite.body.immovable = true
     sprite.body.allowGravity = false
-
     group.add(sprite)
   })
 }
@@ -116,3 +116,5 @@ Phaser.Plugin.ArcadePolygons.Facade.prototype.enableGroup = function (group, pol
 function flatten (array) {
   return [].concat.apply([], array)
 }
+
+module.exports = Facade
