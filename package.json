@@ -2,7 +2,7 @@
   "name": "arcade-polygons-plugin",
   "version": "1.0.0",
   "description": "A Phaser plugin that enables polygons in arcade physics.",
-  "main": "dist/phaser-arcade-slopes.js",
+  "main": "src/ArcadePolygons.js",
   "scripts": {
     "start": "gulp watch",
     "build": "gulp build"

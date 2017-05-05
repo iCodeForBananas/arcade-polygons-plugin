@@ -1,12 +1,5 @@
-const Facade = require('./ArcadePolygons/Facade')
-const Overrides = require('./ArcadePolygons/Overrides')
-
-/**
- * @author Chris Andrew <chris@hexus.io>
- * @author Michael J. Calkins <michaeljamescalkins@gmail.com>
- * @copyright 2017 Michael J. Calkins
- * @license MIT
- */
+const Facade = require('./Facade')
+const Overrides = require('./Overrides')
 
 /**
  * Arcade Polygons provides sloped tile functionality for tilemaps that use
@@ -76,3 +69,7 @@ Phaser.Plugin.ArcadePolygons.prototype.destroy = function () {
 
 Phaser.Plugin.ArcadePolygons.Overrides = Overrides
 Phaser.Plugin.ArcadePolygons.Facade = Facade
+
+window.Phaser.Plugin.ArcadePolygons = Phaser.Plugin.ArcadePolygons
+
+module.exports = Phaser.Plugin.ArcadePolygons

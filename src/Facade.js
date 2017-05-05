@@ -67,10 +67,12 @@ Facade.prototype.enableBody = function (body, vertices) {
  * @method Phaser.Plugin.ArcadePolygons.Facade#enableSpriteBody
  * @param {Phaser.Physics.Arcade.Body} body - The physics body to enable.
  */
-Facade.prototype.enableSpriteBody = function (sprite) {
+Facade.prototype.enableSpriteBody = function (sprite, scope) {
   if (!sprite.hasOwnProperty('body')) {
     console.error('Enable arcade physics before enabling polygon physics.')
   }
+
+  scope.game.physics.arcade.enable(sprite)
 
   var body = sprite.body
   var satPolygon = new SAT.Box(

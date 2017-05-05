@@ -1656,10 +1656,12 @@ Facade.prototype.enableBody = function (body, vertices) {
  * @method Phaser.Plugin.ArcadePolygons.Facade#enableSpriteBody
  * @param {Phaser.Physics.Arcade.Body} body - The physics body to enable.
  */
-Facade.prototype.enableSpriteBody = function (sprite) {
+Facade.prototype.enableSpriteBody = function (sprite, scope) {
   if (!sprite.hasOwnProperty('body')) {
     console.error('Enable arcade physics before enabling polygon physics.');
   }
+
+  scope.game.physics.arcade.enable(sprite);
 
   var body = sprite.body;
   var satPolygon = new SAT.Box(new SAT.Vector(body.x, body.y), body.width, body.height).toPolygon();
@@ -1732,33 +1734,9 @@ const Overrides = {};
  * @return {boolean}                              - Whether a collision occurred.
  */
 Overrides.collideSpriteVsGroup = function (sprite, group, collideCallback, processCallback, callbackContext, overlapOnly) {
-  if (!sprite.body) {
-    return false;
+  if (group.length === 0 || !sprite.body || !sprite.body.sat) {
+    return;
   }
-
-  if (!sprite.body.sat) {
-    console.error('Non polygon object!');
-  }
-
-  /**
-  * Some data populated by the update() method for use in the render()
-  * method.
-  *
-  * @type {object<array>}
-  */
-  this.debug = {
-    vectors: [],
-    normals: []
-  };
-
-  /**
-   * Some feature values we can use throughout our game state.
-   *
-   * @type {object}
-   */
-  this.features = {
-    debug: 0
-  };
 
   var body = sprite.body;
 
@@ -1773,11 +1751,19 @@ Overrides.collideSpriteVsGroup = function (sprite, group, collideCallback, proce
   for (var i in group.children) {
     var polygon = group.children[i];
 
+    if (!polygon.alive) continue;
+
+    polygon.body.sat.polygon.pos.x = polygon.body.x;
+    polygon.body.sat.polygon.pos.y = polygon.body.y;
     var response = new SAT.Response();
     var collision = SAT.testPolygonPolygon(body.sat.polygon, polygon.body.sat.polygon, response);
 
     // Our collision test responded positive, so let's resolve it
     if (collision) {
+      if (collideCallback) {
+        return collideCallback.call(callbackContext, sprite, polygon);
+      }
+
       // Here's our overlap vector - let's invert it so it faces
       // out of the collision surface
       var overlapV = response.overlapV.clone().scale(-1);
@@ -1786,6 +1772,20 @@ Overrides.collideSpriteVsGroup = function (sprite, group, collideCallback, proce
       // collision!
       body.position.x += overlapV.x;
       body.position.y += overlapV.y;
+
+      if (overlapV.x > 0) {
+        body.touching.left = true;
+      }
+      if (overlapV.x < 0) {
+        body.touching.right = true;
+      }
+
+      if (overlapV.y > 0) {
+        body.touching.up = true;
+      }
+      if (overlapV.y < 0) {
+        body.touching.down = true;
+      }
 
       // Let's update the SAT polygon too for any further polygons
       body.sat.polygon.pos.x = body.position.x;
@@ -1819,36 +1819,6 @@ Overrides.collideSpriteVsGroup = function (sprite, group, collideCallback, proce
       // Set the new velocity on our physics body
       body.velocity.x = newVelocity.x;
       body.velocity.y = newVelocity.y;
-
-      // If debugging is enabled, let's store some of our vectors.
-      // This is why we've declared so many variables above.
-      // Otherwise, we wouldn't need to.
-      if (this.features.debug) {
-        velocity.name = 'velocity';
-        overlapV.name = 'overlapV';
-        overlapN.name = 'overlapN';
-        velocityN.name = 'velocityN';
-        velocityT.name = 'velocityT';
-        bounce.name = 'bounce';
-        friction.name = 'friction';
-        newVelocity.name = 'newVelocity';
-
-        this.debug.vectors.push(velocity, overlapN, velocityN, velocityT, bounce, friction, newVelocity);
-
-        // If detailed debugging is enabled, let's print the
-        // vectors as lines on the screen!
-        if (this.features.debug > 1) {
-          overlapN.colour = '#333';
-          bounce.colour = '#25f';
-          friction.colour = '#f55';
-          newVelocity.colour = '#5f5';
-
-          //
-          overlapN.scale(50);
-
-          this.debug.normals.push(overlapN, bounce, friction, newVelocity);
-        }
-      }
     }
   }
 };
@@ -1856,15 +1826,8 @@ Overrides.collideSpriteVsGroup = function (sprite, group, collideCallback, proce
 module.exports = Overrides;
 
 },{"sat":2}],5:[function(require,module,exports){
-const Facade = require('./ArcadePolygons/Facade');
-const Overrides = require('./ArcadePolygons/Overrides');
-
-/**
- * @author Chris Andrew <chris@hexus.io>
- * @author Michael J. Calkins <michaeljamescalkins@gmail.com>
- * @copyright 2017 Michael J. Calkins
- * @license MIT
- */
+const Facade = require('./Facade');
+const Overrides = require('./Overrides');
 
 /**
  * Arcade Polygons provides sloped tile functionality for tilemaps that use
@@ -1935,4 +1898,8 @@ Phaser.Plugin.ArcadePolygons.prototype.destroy = function () {
 Phaser.Plugin.ArcadePolygons.Overrides = Overrides;
 Phaser.Plugin.ArcadePolygons.Facade = Facade;
 
-},{"./ArcadePolygons/Facade":3,"./ArcadePolygons/Overrides":4}]},{},[5])
+window.Phaser.Plugin.ArcadePolygons = Phaser.Plugin.ArcadePolygons;
+
+module.exports = Phaser.Plugin.ArcadePolygons;
+
+},{"./Facade":3,"./Overrides":4}]},{},[5])
